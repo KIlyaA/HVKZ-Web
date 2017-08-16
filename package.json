@@ -7,6 +7,7 @@
     "@types/node": "^8.0.22",
     "@types/react": "^16.0.2",
     "@types/react-dom": "^15.5.3",
+    "firebase": "^4.2.0",
     "inversify": "^4.3.0",
     "inversify-binding-decorators": "^3.0.0",
     "inversify-inject-decorators": "^3.0.1",
