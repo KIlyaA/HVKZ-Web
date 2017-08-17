@@ -15,6 +15,9 @@ interface UserInfo {
 export class SessionStore {
 
   @observable
+  public isReady: boolean = false;
+
+  @observable
   public requestCodeTimeout: number = 0;
 
   @observable
@@ -26,13 +29,18 @@ export class SessionStore {
   @observable.ref
   private confirmation?: Auth.ConfirmationResult;
 
-  private intervalHandler: number;  
+  private intervalHandler: number;
 
   @inject(Auth)
   private authService: Auth.Auth;
 
   @inject(UAPIClient)
   private uAPIClient: UAPIClient;
+
+  @computed
+  public get codeSent(): boolean {
+    return this.confirmation != null;
+  }
 
   @computed
   public get isAuthenticated(): boolean {
@@ -49,17 +57,19 @@ export class SessionStore {
     return this.userInfo.email != null && !this.userInfo.isNew;
   }
 
-  public constructor () {
+  public constructor() {
     const unsubscribe = this.authService.onAuthStateChanged(session => {
+      this.isReady = true;
+      
       if (session != null && session.email != null) {
         this.setSession(session);
       }
-
+      
       unsubscribe();
     });
   }
 
-  public async sendCode (phoneNumber: string, verifier: Auth.ApplicationVerifier): Promise<void> {
+  public async sendCode(phoneNumber: string, verifier: Auth.ApplicationVerifier): Promise<void> {
     if (this.requestCodeTimeout > 0) {
       return;
     }
@@ -98,7 +108,7 @@ export class SessionStore {
       runInAction(() => {
         this.requestCodeTimeout = 0;
         this.confirmation = void 0;
-        clearInterval(this.intervalHandler);        
+        clearInterval(this.intervalHandler);
         this.setSession(session);
       });
     } catch (e) {
@@ -115,7 +125,7 @@ export class SessionStore {
     }
   }
 
-  public async bindProfile (email: string): Promise<void> {
+  public async bindProfile(email: string): Promise<void> {
     const account = await this.uAPIClient.getAccount(email);
 
     const accountPhone = account.phoneNumber.replace(/s+/g, '').slice(-10);
@@ -136,7 +146,7 @@ export class SessionStore {
     }
   }
 
-  public async createOrUpdatePassword (password: string): Promise<void> {
+  public async createOrUpdatePassword(password: string): Promise<void> {
     if (password.length < 5) {
       throw new Error('Минимальная длина пароля 5 символов');
     }
@@ -152,7 +162,7 @@ export class SessionStore {
       await this.session.updateEmail(email);
       await this.session.reauthenticateWithCredential(
         Auth.EmailAuthProvider.credential(email, password));
-  
+
       runInAction(() => {
         this.userInfo.isNew = false;
       });
@@ -162,7 +172,7 @@ export class SessionStore {
   }
 
   @action.bound
-  private tick (): void {
+  private tick(): void {
     if (this.requestCodeTimeout > 0) {
       this.requestCodeTimeout--;
     } else {
@@ -170,7 +180,7 @@ export class SessionStore {
     }
   }
 
-  private setSession (session: Session): void {
+  private setSession(session: Session): void {
     this.userInfo = {
       id: Number(session.displayName) || void 0,
       email: session.email || void 0,
