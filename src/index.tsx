@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 
 import * as Firebase from 'firebase';
+import { enableLogging } from 'mobx-logger';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { injectGlobal } from 'styled-components';
-import { enableLogging } from 'mobx-logger';
 
-import { Auth } from './auth';
+import { Application } from './application';
 import * as serviceWorker from './serviceWorker';
 import { bind } from './utils/di';
 
@@ -53,9 +53,5 @@ injectGlobal`
   }
 `;
 
-ReactDOM.render(
-  <Auth/>,
-  document.getElementById('root') as HTMLElement
-);
-
+ReactDOM.render(<Application/>, document.getElementById('root'));
 serviceWorker.register();

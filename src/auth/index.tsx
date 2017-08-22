@@ -1,4 +1,4 @@
-import { action, observable } from 'mobx';
+import { action, observable, when } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 
@@ -22,6 +22,12 @@ export class Auth extends React.Component {
 
   @inject(SessionStore)
   private sessionStore: SessionStore;
+
+  public componentDidMount(): void {
+    when(() => this.sessionStore.isAuthenticated, action(() => {
+      this.hasPassword = this.sessionStore.hasProfile;
+    }));
+  }
 
   public render(): JSX.Element | null {
     if (!this.sessionStore.isReady) {
@@ -49,7 +55,7 @@ export class Auth extends React.Component {
       }
     }
 
-    return <span>Загружено</span>;
+    return React.Children.only(this.props.children);
   }
 
   @action

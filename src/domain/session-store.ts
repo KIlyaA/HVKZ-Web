@@ -68,15 +68,15 @@ export class SessionStore {
   }
 
   public constructor() {
-    const unsubscribe = this.authService.onAuthStateChanged(action((session: Session | null) => {
-      this.isReady = true;
-      
+    const unsubscribe = this.authService.onAuthStateChanged(session => {
       if (session != null && session.email != null) {
         this.setSession(session);
+      } else {
+        this.isReady = true;
       }
-      
+
       unsubscribe();
-    }));
+    });
   }
 
   public async sendCode(phoneNumber: string, verifier: Auth.ApplicationVerifier): Promise<void> {
@@ -143,7 +143,7 @@ export class SessionStore {
       throw new Error('Анкета пользователя не найдена');
     }
 
-    const userPhone = user.phone.replace(/s+/g, '').slice(-10);    
+    const userPhone = user.phone.replace(/s+/g, '').slice(-10);
     const accountPhone = this.session.phoneNumber!.replace(/s+/g, '').slice(-10);
 
     if (accountPhone !== userPhone) {
@@ -199,6 +199,7 @@ export class SessionStore {
       }
     }
 
+    this.isReady = true;
     this.session = session;
 
     when(() => this.hasProfile, async () => {
