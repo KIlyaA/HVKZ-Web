@@ -1,5 +1,5 @@
 import * as Firebase from 'firebase';
-import { action, observable } from 'mobx';
+import { action, observable, computed } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 
@@ -35,6 +35,11 @@ export class PhoneAuthFragment extends React.Component {
 
   @inject(Firebase.app)
   private firebaseApplication: Firebase.app.App;
+
+  @computed
+  private get canSendCode(): boolean {
+    return this.sessionStore.requestCodeTimeout === 0;
+  }
 
   public componentDidMount(): void {
     this.verifierContainer = document.createElement('div');
@@ -92,7 +97,7 @@ export class PhoneAuthFragment extends React.Component {
           onChange={e => this.verificationCode = e.currentTarget.value}
         />
         <Submit disabled={this.inProgress}>Войти</Submit>
-        {this.sessionStore.requestCodeTimeout === 0 &&
+        {this.canSendCode &&
           <Action onClick={this.sendCode}>Отправить код повторно</Action>}
       </Form>
     );

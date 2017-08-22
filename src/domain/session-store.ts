@@ -1,27 +1,24 @@
 import { auth as Auth, User as Session } from 'firebase';
-import { action, observable, runInAction, when, computed } from 'mobx';
+import { action, computed, observable, runInAction, when } from 'mobx';
 
 import { UAPIClient } from '../uapi';
 import { inject, singleton } from '../utils/di';
-
-interface UserInfo {
-  id?: number;
-  email?: string;
-  phoneNumber: string;
-  isNew: boolean;
-}
+import { ChatsStore } from './chats-store';
+import { Connection } from './connection';
+import { User } from './user';
+import { UsersStore } from './users-store';
 
 @singleton(SessionStore)
 export class SessionStore {
+
+  @observable.ref
+  public user: User;
 
   @observable
   public isReady: boolean = false;
 
   @observable
   public requestCodeTimeout: number = 0;
-
-  @observable
-  private userInfo: UserInfo;
 
   @observable.ref
   private session: Session;
@@ -37,6 +34,15 @@ export class SessionStore {
   @inject(UAPIClient)
   private uAPIClient: UAPIClient;
 
+  @inject(Connection)
+  private connection: Connection;
+
+  @inject(UsersStore)
+  private usersStore: UsersStore;
+
+  @inject(ChatsStore)
+  private chatsStore: ChatsStore;
+
   @computed
   public get codeSent(): boolean {
     return this.confirmation != null;
@@ -49,16 +55,20 @@ export class SessionStore {
 
   @computed
   public get hasProfile(): boolean {
-    return this.userInfo.id != null;
+    return this.isAuthenticated && this.user != null;
   }
 
   @computed
-  public get hasCredential(): boolean {
-    return this.userInfo.email != null && !this.userInfo.isNew;
+  public get currentUserId(): number | null {
+    if (this.user != null) {
+      return this.user.uid;
+    }
+
+    return null;
   }
 
   public constructor() {
-    const unsubscribe = this.authService.onAuthStateChanged(session => {
+    const unsubscribe = this.authService.onAuthStateChanged(action((session: Session | null) => {
       this.isReady = true;
       
       if (session != null && session.email != null) {
@@ -66,7 +76,7 @@ export class SessionStore {
       }
       
       unsubscribe();
-    });
+    }));
   }
 
   public async sendCode(phoneNumber: string, verifier: Auth.ApplicationVerifier): Promise<void> {
@@ -125,22 +135,26 @@ export class SessionStore {
     }
   }
 
+  @action
   public async bindProfile(email: string): Promise<void> {
-    const account = await this.uAPIClient.getAccount(email);
+    const user = await this.uAPIClient.getUser(email);
 
-    const accountPhone = account.phoneNumber.replace(/s+/g, '').slice(-10);
-    const userPhone = this.userInfo.phoneNumber.replace(/s+/g, '').slice(-10);
+    if (user === null) {
+      throw new Error('Анкета пользователя не найдена');
+    }
+
+    const userPhone = user.phone.replace(/s+/g, '').slice(-10);    
+    const accountPhone = this.session.phoneNumber!.replace(/s+/g, '').slice(-10);
 
     if (accountPhone !== userPhone) {
       throw new Error('Ваш номер телефона не совпадает с номером, указанным в анкете');
     }
 
     try {
-      await this.session.updateProfile({ displayName: account.id, photoURL: '' });
-      runInAction(() => {
-        this.userInfo.id = Number(account.id);
-        this.userInfo.email = account.email;
-      });
+      await this.session.updateProfile({ displayName: user.uid.toString(), photoURL: '' });
+      await this.session.updateEmail(email);
+
+      this.user = user;
     } catch (error) {
       throw new Error('Неизвестная ошибка');
     }
@@ -151,7 +165,7 @@ export class SessionStore {
       throw new Error('Минимальная длина пароля 5 символов');
     }
 
-    const email = this.userInfo.email;
+    const email = this.user.email;
 
     if (email == null) {
       throw new Error('Необходимо привязать анкету');
@@ -159,13 +173,8 @@ export class SessionStore {
 
     try {
       await this.session.updatePassword(password);
-      await this.session.updateEmail(email);
       await this.session.reauthenticateWithCredential(
         Auth.EmailAuthProvider.credential(email, password));
-
-      runInAction(() => {
-        this.userInfo.isNew = false;
-      });
     } catch (e) {
       throw new Error('Не удалось установить пароль');
     }
@@ -180,18 +189,25 @@ export class SessionStore {
     }
   }
 
-  private setSession(session: Session): void {
-    this.userInfo = {
-      id: Number(session.displayName) || void 0,
-      email: session.email || void 0,
-      phoneNumber: session.phoneNumber!,
-      isNew: session.displayName == null || session.email == null
-    };
+  @action
+  private async setSession(session: Session): Promise<void> {
+    if (session.email != null) {
+      const user = await this.uAPIClient.getUser(session.email);
+
+      if (user != null) {
+        this.user = user;
+      }
+    }
 
     this.session = session;
-    when(() => !this.userInfo.isNew, async () => {
-      const profile = await this.uAPIClient.getProfile(this.userInfo.id!);
-      console.debug(profile);
+
+    when(() => this.hasProfile, async () => {
+      const userId = this.currentUserId!;
+
+      this.connection.connect(userId);
+
+      await this.usersStore.setUser(userId, this.user);
+      await this.chatsStore.init(userId);
     });
   }
 }

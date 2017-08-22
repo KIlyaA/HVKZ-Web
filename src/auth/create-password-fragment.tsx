@@ -1,3 +1,4 @@
+import { Action } from './components/action';
 import { action, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
@@ -10,8 +11,12 @@ import { Lead } from './components/lead';
 import { Submit } from './components/submit';
 import { Title } from './components/title';
 
+export interface CreatePasswordFragmentProps {
+  onComplete: () => void;
+}
+
 @observer
-export class CreatePasswordFragment extends React.Component {
+export class CreatePasswordFragment extends React.Component<CreatePasswordFragmentProps> {
   
   private passwordInput: HTMLInputElement;
 
@@ -40,6 +45,11 @@ export class CreatePasswordFragment extends React.Component {
           innerRef={ref => { this.passwordInput = ref; }}
         />
         <Submit disabled={this.inProgress}>Далее</Submit>
+        <Action
+          onClick={(e) => { e.preventDefault(); this.props.onComplete(); }}
+        >
+          Создать пароль позже
+        </Action>
       </Form>
     );
   }
@@ -59,7 +69,10 @@ export class CreatePasswordFragment extends React.Component {
     this.inProgress = false;
 
     if (error != null) {
-      this.error = error.message;    
-    } 
+      this.error = error.message;
+      return;
+    }
+    
+    this.props.onComplete();
   }
 }

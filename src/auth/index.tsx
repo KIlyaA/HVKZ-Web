@@ -17,12 +17,11 @@ export class Auth extends React.Component {
   @observable
   private authMethod: 'phone' | 'email' = 'phone';
 
+  @observable
+  private hasPassword: boolean = false;
+
   @inject(SessionStore)
   private sessionStore: SessionStore;
-
-  public componentDidMount(): void {
-    // register initialization hooks with when
-  }
 
   public render(): JSX.Element | null {
     if (!this.sessionStore.isReady) {
@@ -40,15 +39,17 @@ export class Auth extends React.Component {
       );
     }
 
-    if (!this.sessionStore.hasProfile) {
-      return (<Page><BindAccountFragment/></Page>);
+    if (!this.sessionStore.hasProfile || !this.hasPassword) {
+      if (!this.sessionStore.hasProfile) {
+        return (<Page><BindAccountFragment/></Page>);
+      }
+
+      if (!this.hasPassword) {
+        return (<Page><CreatePasswordFragment onComplete={this.skipPasswordStep}/></Page>);
+      }
     }
 
-    if (!this.sessionStore.hasCredential) {
-      return (<Page><CreatePasswordFragment/></Page>);
-    }
-
-    return <h1>Вы успешно вошли в систему</h1>;
+    return <span>Загружено</span>;
   }
 
   @action
@@ -56,5 +57,9 @@ export class Auth extends React.Component {
     event.preventDefault();
     this.authMethod = this.authMethod === 'phone' ? 'email' : 'phone';
   }
-  
+
+  @action
+  private skipPasswordStep = () => {
+    this.hasPassword = true;
+  }
 }

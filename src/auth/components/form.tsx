@@ -10,7 +10,7 @@ export const Form = styled.form`
   display: flex;
   flex-flow: row wrap;
   justify-content: space-between;
-  align-content: center;
+  align-items: center;
 
   & > ${Title} {
     margin-bottom: 36px;
