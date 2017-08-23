@@ -205,10 +205,10 @@ export class SessionStore {
     when(() => this.hasProfile, async () => {
       const userId = this.currentUserId!;
 
-      this.connection.connect(userId);
-
       await this.usersStore.setUser(userId, this.user);
       await this.chatsStore.init(userId);
+
+      this.connection.connect(userId);
     });
   }
 }

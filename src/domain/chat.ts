@@ -14,8 +14,8 @@ export interface Message {
 
 export class Chat {
 
-  @observable
-  public type: string;
+  public readonly jid: string;
+  public readonly type: string;
 
   @observable 
   public canSendStatus: boolean = true;
@@ -23,7 +23,7 @@ export class Chat {
   @observable 
   public isToggled: boolean = false;
 
-  @observable.shallow 
+  @observable.shallow
   public messages: Array<Message> = [];
 
   @observable 
@@ -35,7 +35,6 @@ export class Chat {
   @observable 
   public isNewMessages: boolean = false;
 
-  private jid: string;
   private connection: Connection;
 
   private lastTimestamp: number;
@@ -53,7 +52,9 @@ export class Chat {
       handler: this.onStanzaReceive,
       from: jid,
       name: 'message'
-    });    
+    });
+
+    window[jid] = (text: string) => this.sendMessage(text);
   }
 
   @action 
@@ -184,7 +185,8 @@ export class Chat {
         case 'active':
         case 'inactive':
         case 'composing': {
-          const senderId = stanza.getAttribute('from')!.replace(this.jid + '/', '');
+          const from = stanza.getAttribute('from')!;
+          const senderId = from.replace(this.jid + '/', '') || Strophe.getNodeFromJid(from);
           const name = childName;
           this.onStatusChanged(name, Number(senderId));
           break;

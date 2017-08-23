@@ -13,7 +13,7 @@ export class UAPIClient {
     const username = email.replace(/@|\./g, '');
 
     const response = await fetch(
-      `https://cors-anywhere.herokuapp.com/http://hvkz.org/index/8-0-${username}?api`,
+      `http://hvkz.org/index/8-0-${username}?api`,  // https://cors-anywhere.herokuapp.com/
       { headers: UAPIClient.HEADERS });
     
     const body = await response.text();

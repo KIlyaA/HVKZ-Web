@@ -1,5 +1,5 @@
 import hmacsha1 from 'hmacsha1';
-import { action, observable } from 'mobx';
+import { action, observable, when } from 'mobx';
 import { $iq, $pres, Strophe } from 'strophe.js';
 
 import { singleton } from './../utils/di';
@@ -78,17 +78,19 @@ export class Connection {
   public addListener(packetListener: PacketListener) {
     let ref = null;
 
-    if (this.isConnected) {
-      ref = this.connection.addHandler(
-        packetListener.handler,
-        packetListener.ns!,
-        packetListener.name!,
-        packetListener.type,
-        void 0, 
-        packetListener.from, 
-        Connection.HANDER_OPTIONS as any // tslint:disable-line:no-any
-      );
-    }
+    when(
+      () => this.isConnected, 
+      () => {
+        ref = this.connection.addHandler(
+          packetListener.handler,
+          packetListener.ns!,
+          packetListener.name!,
+          packetListener.type,
+          void 0, 
+          packetListener.from, 
+          Connection.HANDER_OPTIONS as any // tslint:disable-line:no-any
+        );
+      });
 
     this.packetListeners.push(packetListener);
     return this.packetListeners.length - 1;
@@ -166,5 +168,7 @@ export class Connection {
 
       default: break;
     }
+
+    console.log(Object.keys(Strophe.Status)[status], condition);
   }
 }

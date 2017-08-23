@@ -61,14 +61,17 @@ export class ChatsStore {
       return;
     }
 
-    this.groupsStore.groups.get(groupName)!.members.forEach(member => {
+    const group = this.groupsStore.groups.get(groupName)!;
+
+    this.usersStore.addUser(group.admin);
+    group.members.forEach(member => {
       this.usersStore.addUser(member);
     });
 
     const jid = groupName + '@conference.s0565719c.fastvps-server.com';
     const chat = new Chat(this.connection, jid, 'groupchat');
     
-    when(() => !!this.connection.isConnected, () => {
+    when(() => this.connection.isConnected, () => {
       const to = jid + '/' + this.connection.userId;
       const presence = $pres({ to })
         .c('x', { xmlns: Strophe.NS.MUC })
@@ -89,7 +92,7 @@ export class ChatsStore {
 
     const response = await fetch(url, { method: 'GET', headers });
     const status = await response.status;
-    const roster = (await response.json()).rosterItem;
+    const roster = (await response.json()).rosterItem || [];
 
     if (status === 200) {
       if (roster.push) {
