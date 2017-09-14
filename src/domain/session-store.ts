@@ -1,12 +1,10 @@
 import { auth as Auth, User as Session } from 'firebase';
 import { action, computed, observable, runInAction, when } from 'mobx';
 
-import { UAPIClient } from '../uapi';
+import { APIClient } from '../api';
 import { inject, singleton } from '../utils/di';
-import { ChatsStore } from './chats-store';
-import { Connection } from './connection';
 import { User } from './user';
-import { UsersStore } from './users-store';
+import { CommonStore } from './common-store';
 
 @singleton(SessionStore)
 export class SessionStore {
@@ -31,17 +29,11 @@ export class SessionStore {
   @inject(Auth)
   private authService: Auth.Auth;
 
-  @inject(UAPIClient)
-  private uAPIClient: UAPIClient;
+  @inject(APIClient)
+  private uAPIClient: APIClient;
 
-  @inject(Connection)
-  private connection: Connection;
-
-  @inject(UsersStore)
-  private usersStore: UsersStore;
-
-  @inject(ChatsStore)
-  private chatsStore: ChatsStore;
+  @inject(CommonStore)
+  private commonStore: CommonStore;
 
   @computed
   public get codeSent(): boolean {
@@ -202,13 +194,6 @@ export class SessionStore {
     this.isReady = true;
     this.session = session;
 
-    when(() => this.hasProfile, async () => {
-      const userId = this.currentUserId!;
-
-      await this.usersStore.setUser(userId, this.user);
-      await this.chatsStore.init(userId);
-
-      this.connection.connect(userId);
-    });
+    when(() => this.hasProfile, () => this.commonStore.init(this.user));
   }
 }

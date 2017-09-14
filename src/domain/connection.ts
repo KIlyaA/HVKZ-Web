@@ -1,8 +1,8 @@
 import hmacsha1 from 'hmacsha1';
-import { action, observable, when } from 'mobx';
+import { action, observable } from 'mobx';
 import { $iq, $pres, Strophe } from 'strophe.js';
 
-import { singleton } from './../utils/di';
+import { singleton } from '../utils/di';
 
 export interface PacketListener {
   handler: (packet: Element) => boolean;
@@ -18,7 +18,7 @@ export interface PacketListener {
 @singleton(Connection)
 export class Connection {
   
-  private static HANDER_OPTIONS = {
+  private static handlerOptions = {
     matchBareFromJid: true,
     ignoreNamespaceFragment: true 
   };
@@ -39,7 +39,6 @@ export class Connection {
 
   private hasAccount = false;
 
-  // tslint:disable-next-line:no-any
   private packetListeners: Array<PacketListener> = [];
   private connection = new Strophe.Connection('ws://api.hvkz.org/chat/');
 
@@ -50,7 +49,8 @@ export class Connection {
     this.error = null;
 
     const jid = userId + '@s0565719c.fastvps-server.com/web';
-    const password = hmacsha1(userId.toString(), 'password');
+    const password = btoa(hmacsha1(userId.toString(), 'password')).substr(0, 20);
+    console.log(password);
 
     if (!this.hasAccount) {
       const url = 'http://api.hvkz.org:9090/plugins/restapi/v1/users';
@@ -71,26 +71,26 @@ export class Connection {
     }
 
     if (this.hasAccount) {
-      this.establishConnection(jid, password);
+      return this.establishConnection(jid, password);
     }
+
+    return Promise.reject(void 0);
   }
 
   public addListener(packetListener: PacketListener) {
     let ref = null;
 
-    when(
-      () => this.isConnected, 
-      () => {
-        ref = this.connection.addHandler(
-          packetListener.handler,
-          packetListener.ns!,
-          packetListener.name!,
-          packetListener.type,
-          void 0, 
-          packetListener.from, 
-          Connection.HANDER_OPTIONS as any // tslint:disable-line:no-any
-        );
-      });
+    if (this.isConnected) {
+      ref = this.connection.addHandler(
+        packetListener.handler,
+        packetListener.ns!,
+        packetListener.name!,
+        packetListener.type,
+        void 0,
+        packetListener.from,
+        Connection.handlerOptions as any // tslint:disable-line:no-any
+      );
+    }
 
     this.packetListeners.push(packetListener);
     return this.packetListeners.length - 1;
@@ -124,51 +124,53 @@ export class Connection {
         type,
         void 0,
         from,
-        Connection.HANDER_OPTIONS as any // tslint:disable-line:no-any
+        Connection.handlerOptions as any // tslint:disable-line:no-any
       );
     });
 
-    this.connection.connect(jid, password, this.onConnectionListen);
-  }
+    return new Promise(((resolve, reject) => {
+      this.connection.connect(jid, password, action((status: Strophe.Status, condition: string) => {
+        switch (status) {
+          case Strophe.Status.CONNECTING: {
+            this.isConnecting = true;
+            break;
+          }
 
-  @action
-  private onConnectionListen = (status: Strophe.Status, condition: string) => {
-    switch (status) {
-      case Strophe.Status.CONNECTING: {
-        this.isConnecting = true;
-        break;
-      }
+          case Strophe.Status.AUTHFAIL:
+          case Strophe.Status.CONNFAIL: {
+            this.error = 'Не удалось установить соединение с сервером';
+            this.isConnecting = false;
 
-      case Strophe.Status.AUTHFAIL:
-      case Strophe.Status.CONNFAIL: {
-        this.error = 'Не удалось установить соединение с сервером';
-        this.isConnecting = false;
+            reject();
+            break;
+          }
 
-        break;
-      }
+          case Strophe.Status.CONNECTED: {
+            this.isConnecting = false;
+            this.isConnected = true;
+            this.error = null;
 
-      case Strophe.Status.CONNECTED: {
-        this.isConnecting = false;
-        this.isConnected = true;
-        this.error = null;
-        
-        this.send($pres());        
-        this.connection.addTimedHandler(30000, () => {
-          this.send(Connection.IQ_PING);
-          return true;
-        });
-        break;
-      }
+            this.send($pres());
+            this.connection.addTimedHandler(30000, () => {
+              this.send(Connection.IQ_PING);
+              return true;
+            });
 
-      case Strophe.Status.DISCONNECTED: {
-        this.isConnected = false;
+            resolve();
+            break;
+          }
 
-        break;
-      }
+          case Strophe.Status.DISCONNECTED: {
+            this.isConnected = false;
 
-      default: break;
-    }
+            break;
+          }
 
-    console.log(Object.keys(Strophe.Status)[status], condition);
+          default: break;
+        }
+
+        console.log(Object.keys(Strophe.Status)[status], condition);
+      }));
+    }));
   }
 }

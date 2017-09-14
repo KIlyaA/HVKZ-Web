@@ -4,9 +4,11 @@ import * as React from 'react';
 import { Link } from 'react-router-dom';
 import { Strophe } from 'strophe.js';
 
+import { inject } from '../utils/di';
 import { Chat } from '../domain/chat';
 import { ChatsStore } from '../domain/chats-store';
-import { inject } from '../utils/di';
+import { CommonStore } from '../domain/common-store';
+
 import { ChatItem } from './chat-item';
 import { Layout } from './components/layout';
 import { GroupList } from './groups-list';
@@ -17,12 +19,22 @@ export class ChatsPage extends React.Component {
   @inject(ChatsStore)
   private chatsStore: ChatsStore;
 
+  @inject(CommonStore)
+  private commonStore: CommonStore;
+
   @computed
   private get chats(): Chat[] {
     const chats: Chat[] = [];
 
     this.chatsStore.chats.forEach(chat => {
-      if (chat.type === 'chat') {
+      if (chat === null) {
+        return;
+      }
+      
+      const chatId = Number(Strophe.getNodeFromJid(chat.jid));
+      if (
+        (chat.type === 'chat' && chat.messages.length !== 0)
+        || chatId === this.commonStore.supportId) {
         chats.push(chat);
       }
     });
@@ -37,7 +49,11 @@ export class ChatsPage extends React.Component {
         <GroupList/>
         {this.chats.map(chat => {
           return (
-            <Link key={chat.jid} to={`/im/${Strophe.getNodeFromJid(chat.jid)}`}>
+            <Link
+              key={chat.jid}
+              to={`/im/${Strophe.getNodeFromJid(chat.jid)}`} 
+              style={{ textDecoration: 'none' }}
+            >
               <ChatItem chat={chat}/>
             </Link>
           );

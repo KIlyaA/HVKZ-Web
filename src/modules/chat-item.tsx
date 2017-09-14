@@ -8,6 +8,8 @@ import { Chat, Message } from '../domain/chat';
 import { SessionStore } from '../domain/session-store';
 import { User } from '../domain/user';
 import { UsersStore } from '../domain/users-store';
+import { CommonStore } from '../domain/common-store';
+
 import { inject } from '../utils/di';
 
 interface ChatItemProps {
@@ -23,6 +25,9 @@ class ChatItemStructure extends React.Component<ChatItemProps> {
 
   @inject(SessionStore)
   private sessionStore: SessionStore;
+
+  @inject(CommonStore)
+  private commonStore: CommonStore;
 
   @computed
   private get user(): User | undefined {
@@ -56,7 +61,8 @@ class ChatItemStructure extends React.Component<ChatItemProps> {
             <div className="name">
               {!!this.user ? this.getSenderName(this.user.name) : 'Неизвестный пользователь'}
             </div>
-            <div className="time">{this.getTimeMessage(lastMessage.timestamp)}</div>
+            {!!lastMessage && 
+              <div className="time">{this.getTimeMessage(lastMessage.timestamp)}</div>}
           </div>
           <p className="content">{this.getMessageText(lastMessage)}</p>
         </div>
@@ -66,16 +72,15 @@ class ChatItemStructure extends React.Component<ChatItemProps> {
 
   private getMessageText(message: Message | null): string {
     if (message === null) {
+      const chat = this.props.chat;
+      if (Number(Strophe.getNodeFromJid(chat.jid)) === this.commonStore.supportId) {
+        return 'Вы можете задать свой вопрос мне';
+      }
+
       return 'История сообщений пуста';
     }
 
-    let user: string;
-    if (this.user != null) {
-      user = this.user!.uid === this.sessionStore.currentUserId ? 'Вы: ' : '';
-    } else {
-      user = '';
-    }
-    
+    const user = message.senderId === this.sessionStore.currentUserId ? 'Вы: ' : '';
     return user + (message.body || '<Вложения>');
   }
   
@@ -86,13 +91,20 @@ class ChatItemStructure extends React.Component<ChatItemProps> {
 
   private getSenderName(name: string): string {
     const segments = name.split(/\s+/g);
-    return ((segments[1] || '') + ' ' + (segments[2] || '')) || segments[0] || 'Неизвестный';
+
+    if (!segments[1] || !segments[2]) {
+      return segments[0] || 'Неизвестный';
+    }
+
+    return (segments[1] || '') + ' ' + (segments[2] || '');
   }
 }
 
 export const ChatItem = styled(ChatItemStructure)`
   display: flex;
   flex-flow: row nowrap;
+  align-items: center;
+
   padding: 16px 15px;
   width: 100%;
   box-sizing: border-box;
@@ -102,46 +114,44 @@ export const ChatItem = styled(ChatItemStructure)`
     border-bottom: none;
   }
 
-  & > .avatar {
+  > .avatar {
     display: block;
     width: 40px;
     height: 40px;
-    margin-right: 10px;
+    margin-right: 15px;
     border-radius: 50%;
   }
 
-  & > .right {
+  > .right {
     flex: 1;
+    overflow: hidden; 
   }
 
-  & .info {
+  .info {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-between;
     align-items: center;
 
-    & > .name {
+    > .name {
       font-size: 14px;
       font-weight: bold;
       margin-right: 10px;
       color: #555;
     }
 
-    & > .time {
+    > .time {
       font-size: 12.5px;
       color: #555;
     }
   }
 
-  & .content {
+  .content {
     margin: 0;
-    
-    flex: 1;
-    
-    font-size: 16px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 16px;
     color: #333;
   }
 `;

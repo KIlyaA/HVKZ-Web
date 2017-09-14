@@ -1,5 +1,11 @@
 declare module "*.svg" {
-  export default {} as any;
+  const url: string;
+  export default url;
+}
+
+declare module "*.png" {
+  const url: string;
+  export default url;
 }
 
 declare module "*.css" {

@@ -3,7 +3,7 @@ import { action, observable } from 'mobx';
 
 import { inject, singleton } from '../utils/di';
 import { Connection } from './connection';
-import { User } from './user';
+import { User, UnknownUser } from './user';
 
 @singleton(UsersStore)
 export class UsersStore {
@@ -25,7 +25,9 @@ export class UsersStore {
     if (this.users.get(userId) != null) {
       return;
     }
-    
+
+    this.setUser(userId, UnknownUser);
+
     const snapshot: Firebase.database.DataSnapshot =
       await this.database.ref(`users/${userId}`).once('value');
     

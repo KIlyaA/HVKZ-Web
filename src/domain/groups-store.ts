@@ -1,5 +1,5 @@
 import * as Firebase from 'firebase';
-import { observable, action } from 'mobx';
+import { observable, action, runInAction } from 'mobx';
 
 import { inject, singleton } from '../utils/di';
 
@@ -19,20 +19,27 @@ export class GroupsStore {
   @inject(Firebase.database)
   private databaseService: Firebase.database.Database;
 
-  public constructor() {
-    this.databaseService.ref('groups').on('value', this.onGroupsChange);
+  public async init(): Promise<void> {
+    const groupsReference = this.databaseService.ref('groups');
+    const snapshot: Firebase.database.DataSnapshot = await groupsReference.once('value');
+
+    runInAction(() => {
+      snapshot.forEach(entry => {
+        this.addGroup(entry);
+        return false;
+      });
+    });
+
+    groupsReference.on('child_added', action(this.addGroup));
+    groupsReference.on('child_changed', action(this.addGroup));
   }
 
-  @action
-  private onGroupsChange = (snapshot: Firebase.database.DataSnapshot) => {
-    snapshot.forEach((entry) => {
-      const name = entry.key!;
+  private addGroup = (snapshot: Firebase.database.DataSnapshot) => {
+    const name = snapshot.key!;
 
-      const info = entry.val();
-      const group: Group = { name, ...info };
+    const info = snapshot.val();
+    const group: Group = { name, ...info };
 
-      this.groups.set(name, group);
-      return false;
-    });
+    this.groups.set(name, group);
   }
 }

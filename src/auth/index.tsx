@@ -1,8 +1,10 @@
 import { action, observable, when } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
+import { withRouter } from 'react-router';
 
 import { SessionStore } from '../domain/session-store';
+import { CommonStore } from '../domain/common-store';
 import { inject } from '../utils/di';
 import { BindAccountFragment } from './bind-account-fragment';
 import { Action } from './components/action';
@@ -10,7 +12,9 @@ import { Page } from './components/page';
 import { CreatePasswordFragment } from './create-password-fragment';
 import { EmailAuthFragment } from './email-auth-fragment';
 import { PhoneAuthFragment } from './phone-auth-fragment';
+import { Loader } from './components/loader';
 
+@withRouter
 @observer
 export class Auth extends React.Component {
 
@@ -22,6 +26,9 @@ export class Auth extends React.Component {
 
   @inject(SessionStore)
   private sessionStore: SessionStore;
+
+  @inject(CommonStore)
+  private commonStore: CommonStore;
 
   public componentDidMount(): void {
     when(() => this.sessionStore.isAuthenticated, action(() => {
@@ -53,6 +60,10 @@ export class Auth extends React.Component {
       if (!this.hasPassword) {
         return (<Page><CreatePasswordFragment onComplete={this.skipPasswordStep}/></Page>);
       }
+    }
+
+    if (!this.commonStore.isInit) {
+      return <Loader/>;
     }
 
     return React.Children.only(this.props.children);

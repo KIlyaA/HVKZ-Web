@@ -1,5 +1,7 @@
-import { action, computed, observable } from 'mobx';
-import { $msg } from 'strophe.js';
+import { inject } from '../utils/di';
+import { HistoryManager } from '../utils/history-manager';
+import { action, computed, observable, runInAction } from 'mobx';
+import { $msg, Strophe } from 'strophe.js';
 
 import { Connection } from './connection';
 
@@ -16,6 +18,12 @@ export class Chat {
 
   public readonly jid: string;
   public readonly type: string;
+
+  @observable
+  public isFetching: boolean = false;
+
+  @observable
+  public canLoadHistory: boolean = true;
 
   @observable 
   public canSendStatus: boolean = true;
@@ -37,9 +45,13 @@ export class Chat {
 
   private connection: Connection;
 
-  private lastTimestamp: number;
+  private lastTimestamp: number = 0;
 
-  @computed get lastMessage() {
+  @inject(HistoryManager)
+  private historyManager: HistoryManager;
+
+  @computed 
+  public get lastMessage(): Message | null {
     return this.messages[this.messages.length - 1] || null;
   }
 
@@ -54,7 +66,38 @@ export class Chat {
       name: 'message'
     });
 
-    window[jid] = (text: string) => this.sendMessage(text);
+    this.loadHistory();
+  }
+
+  public async loadHistory() {
+    if (this.isFetching) {
+      return;
+    }
+    
+    const firstMessage = this.messages.length === 0 ? null : this.messages[0];
+    const lastTimestamp = !!firstMessage
+      ? firstMessage.timestamp
+      : Math.floor(Date.now() / 1000);
+
+    try {
+      this.isFetching = true;
+      const history = await this.historyManager.getHistory(this.jid, lastTimestamp);
+  
+      if (history === null) {
+        this.canLoadHistory = false;
+        return;
+      }
+
+      runInAction(() => {
+        this.messages = history.concat(this.messages.slice());
+        this.isFetching = false;
+      });
+    } catch (e) {
+      console.log(e);
+      runInAction(() => {
+        this.isFetching = false;
+      });
+    }
   }
 
   @action 
@@ -98,9 +141,9 @@ export class Chat {
   // tslint:disable-next-line:no-any
   public sendMessage(text: string, images: string[] = [], forwarded: Message[] = []): void {
     const id = Strophe.getNodeFromJid(this.jid);
-    const recipientId = Number(id);
+    const recipientId = Number(id) || 0;
     const timestamp = Math.floor(Date.now() / 1000);
-    const senderId = this.connection.userId;
+    const senderId = Number(this.connection.userId);
 
     const message: Message = { 
       body: text,
@@ -115,9 +158,11 @@ export class Chat {
       .c('body').t(JSON.stringify(message));
 
     this.connection.send(packet);
+    this.lastTimestamp = timestamp;
 
     this.messages.push(message);
     this.unreads.push(message.timestamp);
+    this.historyManager.addMessage(this.jid, message);
   }
 
   @action 
@@ -150,10 +195,15 @@ export class Chat {
 
   // tslint:disable-next-line:no-any
   @action 
-  private onMessageReceive(message: Message): void {
-    console.log(this.jid, message);
-    this.unreads = [];
-    this.messages.push(message);
+  private async onMessageReceive(message: Message) {
+    if (message.timestamp === this.lastTimestamp && this.type === 'groupchat') {
+      return;
+    }
+        
+    if (await this.historyManager.addMessage(this.jid, message)) {
+      this.unreads = [];
+      this.messages.push(message);
+    }
   }
 
   private removeFromWriters(senderId: number) {
@@ -172,11 +222,6 @@ export class Chat {
       switch (childName) {
         case 'body': {
           const message: Message = JSON.parse(child.innerHTML);
-          
-          if (this.lastTimestamp === Number(message.timestamp) && this.type === 'groupchat') {
-            return true;
-          }
-
           this.onMessageReceive(message);
           this.isNewMessages = this.isToggled;
           break;
@@ -186,9 +231,15 @@ export class Chat {
         case 'inactive':
         case 'composing': {
           const from = stanza.getAttribute('from')!;
-          const senderId = from.replace(this.jid + '/', '') || Strophe.getNodeFromJid(from);
+          const senderId = Number.parseInt(
+            from.replace(this.jid + '/', '') || Strophe.getNodeFromJid(from));
           const name = childName;
-          this.onStatusChanged(name, Number(senderId));
+
+          if (senderId === Number(this.connection.userId)) {
+            break;
+          }
+
+          this.onStatusChanged(name, senderId);
           break;
         }
 

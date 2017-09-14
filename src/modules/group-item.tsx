@@ -1,6 +1,8 @@
 import { computed } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
+import { Link } from 'react-router-dom';
+import { Strophe } from 'strophe.js';
 import styled from 'styled-components';
 
 import { Chat } from '../domain/chat';
@@ -53,7 +55,13 @@ class GroupItemStructure extends React.Component<GroupItemProps> {
             </div>
           </div>
       )}
-      {!!this.chat && <ChatItem chat={this.chat}/>}
+      {!!this.chat && (
+        <Link
+          key={this.chat.jid}
+          to={`/im/${Strophe.getNodeFromJid(this.chat.jid)}`} 
+        >
+            <ChatItem chat={this.chat}/>
+        </Link>)}
       </div>
     );
   }
@@ -63,13 +71,13 @@ export const GroupItem = styled(GroupItemStructure)`
   background: #fff;
   border-radius: 5px;
 
-  & > .leader {
+  > .leader {
     display: flex;
     flex-flow: row nowrap;
     padding: 12px 15px;
     border-bottom: 1px solid #f2f2f2;
 
-    & > img {
+    > img {
       width: 72px;
       height: 72px;
       border-radius: 50%; 
@@ -77,21 +85,26 @@ export const GroupItem = styled(GroupItemStructure)`
       margin-right: 10px;
     }
 
-    & .role {
+    .role {
       padding-bottom: 4px;
       font-size: 12.5px;
       line-height: 16px;
     }
 
-    & .name {
+    .name {
       margin: 0;
       font-size: 18px;
       line-height: 24px;
     }
   }
 
-  & .notice {
+  .notice {
     margin: 0;
     font-size: 14px;
+  }
+
+  a {
+    text-decoration: none;
+    display: block;
   }
 `;

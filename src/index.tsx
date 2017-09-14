@@ -1,19 +1,12 @@
 import 'reflect-metadata';
 
 import * as Firebase from 'firebase';
-import { enableLogging } from 'mobx-logger';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { injectGlobal } from 'styled-components';
 
 import { Application } from './application';
-import * as serviceWorker from './serviceWorker';
 import { bind } from './utils/di';
-
-enableLogging({
-  action: true,
-  reaction: true
-});
 
 const firebaseApplication = Firebase.initializeApp({
   apiKey: 'AIzaSyAf0GPyWWcbBKTWP6PMUklpAeYlPkH-ZNo',
@@ -46,12 +39,20 @@ injectGlobal`
   }
 
   #root {
+    box-sizing: border-box;
     margin: 0 auto;
     max-width: 480px;
     width: 100%;
     height: 100%;
+
+    border-left: 1px solid #f5f5f5;
+    border-right: 1px solid #f5f5f5;
+
+    > div {
+      width: 100%;
+      height: 100%;
+    }
   }
 `;
 
-ReactDOM.render(<Application/>, document.getElementById('root'));
-serviceWorker.register();
+ReactDOM.render((<div><Application/></div>), document.getElementById('root'));
