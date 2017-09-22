@@ -28,11 +28,18 @@ const BottomBarStructure: React.SFC<{className?: string }> = (props) => (
 );
 
 export const BottomBar = styled(BottomBarStructure)`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  
   box-sizing: border-box;
   box-shadow: 0px 0px 15px 0px rgba(0, 0, 0, 0.14);
 
   width: 100%;
   padding: 10px 30px;
+
+  background: #fff;
+  z-index: 500;
 
   display: flex;
   flex-flow: row nowrap;
@@ -41,7 +48,7 @@ export const BottomBar = styled(BottomBarStructure)`
 
   a {
     text-decoration: none;
-    font-size: 14px;
+    font-size: 12px;
     text-align: center;
     line-height: 16px;
 
@@ -49,9 +56,10 @@ export const BottomBar = styled(BottomBarStructure)`
   }
 
   .icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     margin: 0 auto;
+    margin-bottom: 2px;
     background-position: center;
   }
 

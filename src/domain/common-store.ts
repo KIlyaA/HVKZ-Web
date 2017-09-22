@@ -1,3 +1,4 @@
+import { GalleryStore } from './gallery-store';
 import * as Firebase from 'firebase';
 import { observable, reaction, runInAction } from 'mobx';
 
@@ -33,6 +34,9 @@ export class CommonStore {
   @inject(GroupsStore)
   private groupsStore: GroupsStore;
 
+  @inject(GalleryStore)
+  private galleryStore: GalleryStore;
+
   @inject(Firebase.database)
   private databaseService: Firebase.database.Database;
 
@@ -46,12 +50,14 @@ export class CommonStore {
       data: JSON.stringify(user)
     });
 
+    await this.galleryStore.loadGallery(user.uid);
+
     const supportId = (await this.databaseService.ref('options/support').once('value')).val();
     await this.chatsStore.addPersonalChat(supportId);
 
     const userIds = await this.apiClient.getRoster(user.user);
     await Promise.all(userIds.map(userId => this.chatsStore.addPersonalChat(userId)));
-
+    
     await this.groupsStore.init();
     await this.addGroupChats();
 
@@ -70,11 +76,11 @@ export class CommonStore {
   private addGroupChats = async () => {
     const groups: Promise<void>[] = [];
 
-    for (let group of this.groupsStore.groups.values()) {
-      if (group.admin === this.currentUserId || group.members.indexOf(this.currentUserId!) !== -1) {
-        groups.push(this.chatsStore.addGroupChat(group.name));
+    this.groupsStore.groups.forEach(g => {
+      if (g.admin === this.currentUserId || g.members.indexOf(this.currentUserId!) !== -1) {
+        groups.push(this.chatsStore.addGroupChat(g.name));
       }
-    }
+    });
 
     return Promise.all(groups);
   }

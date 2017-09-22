@@ -5,18 +5,18 @@ import { Link } from 'react-router-dom';
 import { Strophe } from 'strophe.js';
 import styled from 'styled-components';
 
-import { Chat } from '../domain/chat';
-import { ChatsStore } from '../domain/chats-store';
-import { Group } from '../domain/groups-store';
-import { User } from '../domain/user';
-import { UsersStore } from '../domain/users-store';
-import { inject } from '../utils/di';
+import { Chat } from '../../domain/chat';
+import { ChatsStore } from '../../domain/chats-store';
+import { Group } from '../../domain/groups-store';
+import { User } from '../../domain/user';
+import { UsersStore } from '../../domain/users-store';
+import { inject } from '../../utils/di';
 import { ChatItem } from './chat-item';
 
 export interface GroupItemProps {
   group: Group;
   className?: string;
-}
+} 
 
 @observer
 class GroupItemStructure extends React.Component<GroupItemProps> {
@@ -70,7 +70,8 @@ class GroupItemStructure extends React.Component<GroupItemProps> {
 export const GroupItem = styled(GroupItemStructure)`
   background: #fff;
   border-radius: 5px;
-
+  border: 1px solid #c0c0c0;
+  
   > .leader {
     display: flex;
     flex-flow: row nowrap;

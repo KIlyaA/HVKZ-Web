@@ -6,6 +6,8 @@ const Layout = styled.div`
   width: 100%;
   height: 100%;
   padding: 15% 30px 24px 30px;
+
+  overflow-y: auto;
 `;
 
 const AppName = styled.h1`

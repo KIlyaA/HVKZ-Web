@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import { FileUploadTask } from '../domain/file-upload-task';
+import { FileUploadTask } from '../../domain/file-upload-task';
 import { Progress } from './progress';
 
 interface UploadViewProps {
@@ -50,6 +50,7 @@ const StyledUploadView = styled(UploadView)`
   position: relative;
   width: 64px;
   height: 64px;
+  display: inline-block;
 
   cursor: pointer;
 

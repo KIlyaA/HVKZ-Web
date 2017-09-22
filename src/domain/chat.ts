@@ -8,9 +8,16 @@ import { Connection } from './connection';
 export interface Message {
   body: string;
   images: string[];
-  forwarded: Message[];
+  forwarded: FWD[];
   senderId: number;
   recipientId: number;
+  timestamp: number;
+}
+
+export interface FWD {
+  images: string[];
+  message: string;
+  sender: number;
   timestamp: number;
 }
 
@@ -139,7 +146,7 @@ export class Chat {
 
   @action
   // tslint:disable-next-line:no-any
-  public sendMessage(text: string, images: string[] = [], forwarded: Message[] = []): void {
+  public sendMessage(text: string, images: string[] = [], forwarded: FWD[] = []): void {
     const id = Strophe.getNodeFromJid(this.jid);
     const recipientId = Number(id) || 0;
     const timestamp = Math.floor(Date.now() / 1000);

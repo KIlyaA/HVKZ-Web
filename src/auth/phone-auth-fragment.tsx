@@ -76,7 +76,9 @@ export class PhoneAuthFragment extends React.Component {
           placeholder="Введите номер телефона"
           onChange={e => this.phoneNumber = e.currentTarget.value}
         />
-        <Submit disabled={this.inProgress}>Отправить код</Submit>
+        <Submit disabled={this.inProgress}>
+          {this.inProgress ? 'Высылаем код' : 'Отправить код'}
+        </Submit>
       </Form>
     );
   }

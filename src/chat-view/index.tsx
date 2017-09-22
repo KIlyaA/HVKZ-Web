@@ -10,6 +10,7 @@ import { Header } from './header';
 import { Input } from './input';
 import { Layout } from './layout';
 import { MessagesList } from './messages-list';
+import { LightBox } from './lightbox';
 
 interface ChatViewProps extends RouteComponentProps<{
   chatName: string;
@@ -46,9 +47,10 @@ export class ChatView extends React.Component<ChatViewProps> {
 
     return (
       <Layout>
+        <LightBox/>
         <Header chat={this.chat}/>
         <MessagesList chat={this.chat}/>
-        <Input chat={this.chat} forwaded={[]}/>
+        <Input chat={this.chat}/>
       </Layout>
     );
   }

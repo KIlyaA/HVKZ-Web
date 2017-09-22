@@ -20,3 +20,5 @@ export const singleton = <T>(identifier: Identifier<T>) => {
 };
 
 export const inject = getDecorators(container).lazyInject;
+
+export const get = <T>(identifier: Identifier<T>) => container.get(identifier);

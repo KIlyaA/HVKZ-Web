@@ -38,7 +38,7 @@ export class Auth extends React.Component {
 
   public render(): JSX.Element | null {
     if (!this.sessionStore.isReady) {
-      return null;
+      return <Loader/>;
     }
 
     if (!this.sessionStore.isAuthenticated) {

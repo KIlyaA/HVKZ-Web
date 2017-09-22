@@ -1,12 +1,13 @@
+import { UIStore } from '../../domain/ui-store';
 import { computed, action } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import styled from 'styled-components';
 import Slider, { SiemaSliderProps }  from 'react-siema';
 
-import { Group, GroupsStore } from '../domain/groups-store';
-import { SessionStore } from '../domain/session-store';
-import { inject } from '../utils/di';
+import { Group, GroupsStore } from '../../domain/groups-store';
+import { SessionStore } from '../../domain/session-store';
+import { inject } from '../../utils/di';
 import { GroupItem } from './group-item';
 
 import clock from './clock.svg';
@@ -14,7 +15,14 @@ import clock from './clock.svg';
 @observer
 class GroupsListStructure extends React.Component<{ className?: string }> {
 
-  private static currentGroup: number = 0;
+  @inject(GroupsStore)
+  private groupsStore: GroupsStore;
+
+  @inject(SessionStore)
+  private sessionStore: SessionStore;
+
+  @inject(UIStore)
+  private uiStore: UIStore;
 
   private sliderOptions: SiemaSliderProps = {
     draggable: true,
@@ -23,18 +31,12 @@ class GroupsListStructure extends React.Component<{ className?: string }> {
     threshold: 20,
     perPage: 1,
     resizeDebounce: 200,
-    startIndex: GroupsListStructure.currentGroup,
+    startIndex: this.uiStore.currentSlide,
 
     onChange: action((e) => {
-      GroupsListStructure.currentGroup = e as number;
+      this.uiStore.currentSlide = e as number;
     })
   };
-
-  @inject(GroupsStore)
-  private groupsStore: GroupsStore;
-
-  @inject(SessionStore)
-  private sessionStore: SessionStore;
 
   @computed
   private get groups(): Group[] {
@@ -92,7 +94,7 @@ class GroupsListStructure extends React.Component<{ className?: string }> {
       dots.push(
         <li
           key={i}
-          className={GroupsListStructure.currentGroup === i ? 'active' : ''}
+          className={this.uiStore.currentSlide === i ? 'active' : ''}
         >
           <button>{i}</button>
         </li>

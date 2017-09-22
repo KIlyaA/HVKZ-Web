@@ -4,13 +4,13 @@ import * as React from 'react';
 import { Link } from 'react-router-dom';
 import { Strophe } from 'strophe.js';
 
-import { inject } from '../utils/di';
-import { Chat } from '../domain/chat';
-import { ChatsStore } from '../domain/chats-store';
-import { CommonStore } from '../domain/common-store';
+import { inject } from '../../utils/di';
+import { Chat } from '../../domain/chat';
+import { ChatsStore } from '../../domain/chats-store';
+import { CommonStore } from '../../domain/common-store';
 
 import { ChatItem } from './chat-item';
-import { Layout } from './components/layout';
+import { Layout } from '../components/layout';
 import { GroupList } from './groups-list';
 
 @observer

@@ -36,7 +36,7 @@ export class BindAccountFragment extends React.Component {
         </Lead>
         <Input
           name="email"
-          type="email"
+          type="text"
           required={true}
           placeholder="Введите email"
           innerRef={ref => { this.emailInput = ref; }}

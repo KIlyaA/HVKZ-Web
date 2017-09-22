@@ -1,14 +1,20 @@
 import * as React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router';
 import { Strophe } from 'strophe.js';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 
 import { Chat } from '../domain/chat';
 import { GroupsStore } from '../domain/groups-store';
-import { User } from '../domain/user';
+import { UnknownUser, User } from '../domain/user';
 import { UsersStore } from '../domain/users-store';
 import { inject } from '../utils/di';
+import { declOfNum } from '../utils/decl-of-num';
 import arrow from './arrow-left.svg';
+
+const marquee = keyframes`
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(-80%, 0); }
+`;
 
 const Wrapper = styled.div`
   display: flex;
@@ -45,11 +51,21 @@ const Avatar = styled.img`
 `;
 
 const Info = styled.div`
-  padding: 0 15px;
+  margin: 0 15px;
   flex: 1;
+  
+  white-space: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
 
   .name {
     margin: 0;
+    overflow: hidden;
+
+    &.marquee > span {
+      display: inline-block;
+      animation: ${marquee} 10s linear infinite;
+    }
   }
 
   .status {
@@ -67,15 +83,17 @@ interface HeaderProps {
 @withRouter
 export class Header extends React.Component<HeaderProps> {
 
+  private nameContainer: HTMLElement;
+
   @inject(UsersStore)
   private usersStore: UsersStore;
 
   @inject(GroupsStore)
   private groupsStore: GroupsStore;
 
-  private get user(): User | null | undefined {
+  private get user(): User {
     if (!this.props.chat) {
-      return null;
+      return UnknownUser;
     }
 
     const chatName = Strophe.getNodeFromJid(this.props.chat.jid);
@@ -83,7 +101,7 @@ export class Header extends React.Component<HeaderProps> {
       ? this.groupsStore.groups.get(chatName)!.admin
       : Number(chatName);
 
-    return this.usersStore.users.get(userId);
+    return this.usersStore.users.get(userId) || UnknownUser;
   }
 
   private get router(): RouteComponentProps<{}> {
@@ -91,19 +109,26 @@ export class Header extends React.Component<HeaderProps> {
     return this.props as any;
   }
 
-  public render(): JSX.Element | null {
-    const name = this.user ? this.user.name : 'Неизвестный пользователь';
-    const avatarUrl = this.user ? this.user.photo :       
-      'https://api.adorable.io/avatars/285/random@adorable.io.png';
+  public componentDidMount(): void {
+    const overflowX = this.nameContainer.offsetWidth < this.nameContainer.scrollWidth;
+    const overflowY = this.nameContainer.offsetHeight < this.nameContainer.scrollHeight;
 
+    if (overflowX || overflowY) {
+      this.nameContainer.className = this.nameContainer.className + ' marquee';
+    }
+  }
+
+  public render(): JSX.Element | null {
     return (
       <Wrapper>
         <BackArrow onClick={this.handleGoToBack}/>
         <Info>
-          <p className="name">{name}</p>
+          <p className="name" ref={el => this.nameContainer = el!}>
+            <span>{this.user.name}</span>
+          </p>
           <p className="status">{this.getStatus()}</p>
         </Info>
-        <Avatar src={avatarUrl}/>
+        <Avatar src={this.user.photo}/>
       </Wrapper>
     );
   }
@@ -120,7 +145,7 @@ export class Header extends React.Component<HeaderProps> {
       return 'В сети';
     } else {
       const count = this.groupsStore.groups.get(chatName)!.members.length;
-      return count + ' участников'; 
+      return count + ' ' + declOfNum(count, ['участник', 'участника', 'участников']); 
     }
   }
 }

@@ -2,19 +2,32 @@ import { observable, action } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import styled from 'styled-components';
+import Textarea from 'react-textarea-autosize';
 
-import { Chat, Message } from '../domain/chat';
-import { FileUploadTask } from '../domain/file-upload-task';
-import { inject } from '../utils/di';
-import { ImageUploader } from '../utils/image-uploader';
-import send from './send.svg';
+import { inject } from '../../utils/di';
+import { Chat, FWD } from '../../domain/chat';
+import { UIStore } from '../../domain/ui-store';
+import { FileUploadTask } from '../../domain/file-upload-task';
+import { ImageUploader } from '../../utils/image-uploader';
+import { declOfNum } from '../../utils/decl-of-num';
+
 import { UploadButton } from './upload-button';
 import { UploadView } from './upload-view';
+import send from './send.svg';
 
 const Wrapper = styled.div`
   box-sizing: border-box;
   background: #fff; 
   box-shadow: 0px 0px 15px 0px rgba(0, 0, 0, 0.14);
+
+  > .fwd {
+    margin: 0;
+    box-sizing: border-box;
+    border-left: 1px solid #f2f2f2;
+    padding: 6px 12px;
+    font-size: 14px;
+    color: #555;
+  }
 `;
 
 const Form = styled.form`
@@ -23,7 +36,7 @@ const Form = styled.form`
   align-items: flex-start;
 `;
 
-const MessageInput = styled.textarea`
+const MessageInput = styled(Textarea)`
   border: none;
   outline: none;
   padding: 12px 12px;
@@ -72,16 +85,13 @@ const Images = styled.div`
 
 interface InputProps {
   chat: Chat;
-  forwaded: Message[];
 }
 
 @observer
 export class Input extends React.Component<InputProps> {
 
-  private messageInput: HTMLTextAreaElement;
-
   @observable
-  private messageInputRows: number = 1;
+  private messageText: string = '';
 
   @observable.shallow
   private uploads: FileUploadTask[] = [];
@@ -89,25 +99,40 @@ export class Input extends React.Component<InputProps> {
   @inject(ImageUploader)
   private imageUploader: ImageUploader;
 
-  public componentWillUnmount() {
+  @inject(UIStore)
+  private uiStore: UIStore;
+
+  public componentWillUnmount(): void {
     this.uploads.forEach(uploadTask => this.handleCancelUpload(uploadTask));
+    this.uiStore.selectedMessages.clear();
+  }
+
+  public componentWillReceiveProps(nextProps: InputProps): void {
+    if (nextProps.chat !== this.props.chat) {
+      this.uploads.forEach(uploadTask => this.handleCancelUpload(uploadTask));
+      this.uiStore.selectedMessages.clear();
+      this.messageText = '';
+    }
   }
 
   public render(): JSX.Element {
-    const { forwaded } = this.props;
+    const forwaded = this.uiStore.selectedMessages;
     return (
      <Wrapper>
-      {forwaded.length !== 0 && (<div>{forwaded.length}</div>)}
+      {forwaded.size !== 0 && (
+        <div className="fwd">В ответ на {forwaded.size} 
+          {declOfNum(forwaded.size, ['сообщение', 'сообщения', 'сообщений'])}</div>
+      )}
       {this.uploads.length !== 0 && (
         <Images>{this.uploads.map(upload => this.renderUploadView(upload))}</Images>
       )}
       <Form onSubmit={this.handleSubmit}>
         <UploadButton onChange={this.uploadImages}/>
         <MessageInput
-          rows={this.messageInputRows}
+          maxRows={3}
           placeholder="Введите сообщение..."
           onChange={this.handleChange}
-          innerRef={ref => this.messageInput = ref}
+          value={this.messageText}
         />
         <SendButton/>
       </Form>
@@ -132,15 +157,11 @@ export class Input extends React.Component<InputProps> {
 
   @action
   private handleChange = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    const chat = this.props.chat;
-    if (chat.canSendStatus) {
-      chat.composing();
+    if (this.props.chat.canSendStatus) {
+      this.props.chat.composing();
     }
 
-    // e.currentTarget.rows = 1;
-    // tslint:disable-next-line:no-bitwise
-    // const newRows = ~~(e.currentTarget.scrollHeight / 24);
-    this.messageInputRows = 1;
+    this.messageText = e.currentTarget.value;
   }
 
   @action
@@ -148,12 +169,12 @@ export class Input extends React.Component<InputProps> {
     const images = Array.from(e.currentTarget.files || []);
     const uploads = JSON.parse(localStorage.getItem('upload_tasks')!) || [];
 
-    images.forEach(image => {
-      console.log(image.name);
-      const uploadTask = this.imageUploader.upload(image);
+    for (let i = 0; i < images.length; i++) {
+      let image = images[i];      
+      const uploadTask = await this.imageUploader.upload(image);
       this.uploads.push(uploadTask);
       uploads.push(uploadTask.ref);
-    });
+    }
 
     localStorage.setItem('upload_tasks', JSON.stringify(uploads));
   }
@@ -168,8 +189,9 @@ export class Input extends React.Component<InputProps> {
     localStorage.setItem('upload_tasks', JSON.stringify(uploads));
   }
 
-  private sendMessage() {
-    const text = this.messageInput.value.trim();
+  @action
+  private sendMessage(): void {
+    const text = this.messageText.trim();
     let isAllLoaded = true;
 
     for (let i = 0; i < this.uploads.length; i++) {
@@ -180,9 +202,22 @@ export class Input extends React.Component<InputProps> {
     }
 
     if (!!text || (this.uploads.length !== 0 && isAllLoaded)) {
-      this.props.chat.sendMessage(text, this.uploads.map(task => task.downloadUrl));
-      this.messageInput.value = '';
+      const images = this.uploads.map(task => task.downloadUrl);
+      const forwaded: FWD[] = [];
+      
+      this.uiStore.selectedMessages.forEach(message => {
+        forwaded.push({
+          images: [],
+          message: message.body,
+          sender: message.senderId,
+          timestamp: message.timestamp
+        });
+      });
 
+      this.props.chat.sendMessage(text, images, forwaded.sort((a, b) => a.timestamp - b.timestamp));
+      this.messageText = '';
+
+      this.uiStore.selectedMessages.clear();
       this.uploads = [];
       localStorage.removeItem('upload_tasks');
     }

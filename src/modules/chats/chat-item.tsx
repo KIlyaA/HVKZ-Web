@@ -4,13 +4,13 @@ import * as React from 'react';
 import { Strophe } from 'strophe.js';
 import styled from 'styled-components';
 
-import { Chat, Message } from '../domain/chat';
-import { SessionStore } from '../domain/session-store';
-import { User } from '../domain/user';
-import { UsersStore } from '../domain/users-store';
-import { CommonStore } from '../domain/common-store';
+import { Chat, Message } from '../../domain/chat';
+import { SessionStore } from '../../domain/session-store';
+import { User } from '../../domain/user';
+import { UsersStore } from '../../domain/users-store';
+import { CommonStore } from '../../domain/common-store';
 
-import { inject } from '../utils/di';
+import { inject } from '../../utils/di';
 
 interface ChatItemProps {
   chat: Chat;

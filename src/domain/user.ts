@@ -43,7 +43,7 @@ export const UnknownUser: User = {
   user: 'unknown',
   phone: '+00000000000',
   email: 'unknown@who.is',
-  photo: '',
+  photo: 'https://api.adorable.io/avatars/285/random@adorable.io.png',
 
   regdate: '',
   programStartDate: '',
@@ -58,7 +58,7 @@ export const UnknownUser: User = {
 
   age: 0,
   birthday: '',
-  gender: 'Неизсветсно',
+  gender: 'Неизсвеcтно',
 
   signature: '',
 

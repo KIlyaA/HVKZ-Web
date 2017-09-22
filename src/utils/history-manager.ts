@@ -67,7 +67,7 @@ export class HistoryManager {
   public async addMessage(chatId: string, message: Message) {
     try {
       if (this.lastTimestamps[chatId] >= message.timestamp) {
-        console.log('Пропущено:', chatId, message);
+        // console.log('Пропущено:', chatId, message);
         return false;
       }
 

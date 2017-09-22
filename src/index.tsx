@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import 'react-photoswipe/lib/photoswipe.css';
 
 import * as Firebase from 'firebase';
 import * as React from 'react';
@@ -36,6 +37,8 @@ injectGlobal`
     line-height: 1.5;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
       Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+
+    overflow-y: hidden;
   }
 
   #root {
@@ -44,9 +47,6 @@ injectGlobal`
     max-width: 480px;
     width: 100%;
     height: 100%;
-
-    border-left: 1px solid #f5f5f5;
-    border-right: 1px solid #f5f5f5;
 
     > div {
       width: 100%;

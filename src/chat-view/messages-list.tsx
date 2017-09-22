@@ -4,9 +4,13 @@ import * as React from 'react';
 import ChatView from 'react-chatview';
 import styled from 'styled-components';
 
+import { inject } from '../utils/di';
+import { CommonStore } from '../domain/common-store';
+import { UsersStore } from '../domain/users-store';
 import { Chat, Message } from '../domain/chat';
-import background from './background.png';
+import { UnknownUser } from '../domain/user';
 import { MessageItem } from './message-item';
+import background from './background.png';
 
 interface MessagesListProps {
   chat: Chat;
@@ -15,6 +19,12 @@ interface MessagesListProps {
 
 @observer
 class MessagesList extends React.Component<MessagesListProps> {
+
+  @inject(UsersStore)
+  private usersStore: UsersStore;
+
+  @inject(CommonStore)
+  private commonStore: CommonStore;
 
   @computed
   private get messages(): Message[] {
@@ -39,12 +49,29 @@ class MessagesList extends React.Component<MessagesListProps> {
         shouldTriggerLoad={this.shouldLoadHistory}
         className={this.props.className}
       >
-        {this.messages.map((message) => (
-          <div key={message.timestamp} className="box">
-            <MessageItem message={message} />
-          </div>
-        ))}
+        {this.messages.map(this.renderMessage)}
       </ChatView>
+    );
+  }
+
+  private renderMessage = (message: Message, index: number, messages: Message[]): JSX.Element => {
+    const user = this.usersStore.users.get(message.senderId) || UnknownUser;
+    const isOut = this.commonStore.currentUserId === message.senderId;
+    const prevMessage = messages[index - 1] || null;
+
+    const isStartChain = prevMessage !== null && prevMessage.senderId !== message.senderId;
+    return (
+      <div 
+        key={message.timestamp}
+        className={'box ' + (isStartChain ? ' start' : '')}
+      >
+        <MessageItem
+          message={message}
+          isOut={isOut}
+          user={user}
+          showAvatar={isStartChain}
+        />
+      </div>
     );
   }
 
@@ -64,12 +91,16 @@ class MessagesList extends React.Component<MessagesListProps> {
 
 const StyledMessagesList = styled(MessagesList)`
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   flex: 1;
   background: #f5f5f5 url(${background}) repeat;
   padding: 12px 15px;
 
   .box {
-    margin-bottom: 6px;
+    margin-bottom: 12px;
+    .start {
+      margin-bottom: 8px;
+    }
   }
 `;
 

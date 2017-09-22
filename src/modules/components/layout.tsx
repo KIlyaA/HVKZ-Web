@@ -16,11 +16,10 @@ export const Layout = styled(LayoutStructure)`
   width: 100%;
   height: 100%;
   overflow-y: auto;
+  position: relative;
 
-  display: flex;
-  flex-flow: column nowrap;
-
-  & > .viewport {
-    flex: 1;
+  .viewport {
+    width: 100%;
+    height: 100%;
   }
 `;
