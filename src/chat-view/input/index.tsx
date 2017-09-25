@@ -1,3 +1,4 @@
+import { Connection } from '../../domain/connection';
 import { observable, action } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
@@ -96,6 +97,9 @@ export class Input extends React.Component<InputProps> {
   @observable.shallow
   private uploads: FileUploadTask[] = [];
 
+  @inject(Connection)
+  private connection: Connection;
+
   @inject(ImageUploader)
   private imageUploader: ImageUploader;
 
@@ -126,8 +130,8 @@ export class Input extends React.Component<InputProps> {
       {this.uploads.length !== 0 && (
         <Images>{this.uploads.map(upload => this.renderUploadView(upload))}</Images>
       )}
-      <Form onSubmit={this.handleSubmit}>
-        <UploadButton onChange={this.uploadImages}/>
+      <Form onSubmit={this.handleSubmit} disabled={!this.connection.isConnected}>
+        <UploadButton onChange={this.uploadImages} disabled={!this.connection.isConnected}/>
         <MessageInput
           maxRows={3}
           placeholder="Введите сообщение..."
@@ -152,6 +156,12 @@ export class Input extends React.Component<InputProps> {
 
   private handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!this.connection.isConnected) {
+      alert('Отправка сообщения невозможна по причине отсутствия подключения');
+      return;
+    }
+    
     this.sendMessage();
   }
 

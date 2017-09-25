@@ -12,6 +12,7 @@ import { CommonStore } from '../../domain/common-store';
 import { ChatItem } from './chat-item';
 import { Layout } from '../components/layout';
 import { GroupList } from './groups-list';
+import { ConnectionStatus } from '../../connection-status';
 
 @observer
 export class ChatsPage extends React.Component {
@@ -46,6 +47,7 @@ export class ChatsPage extends React.Component {
   public render(): JSX.Element {
     return (
       <Layout>
+        <ConnectionStatus/>
         <GroupList/>
         {this.chats.map(chat => {
           return (

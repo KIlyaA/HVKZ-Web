@@ -59,13 +59,13 @@ export class CommonStore {
     await Promise.all(userIds.map(userId => this.chatsStore.addPersonalChat(userId)));
     
     await this.groupsStore.init();
-    await this.addGroupChats();
+    await this.initGroupChats();
 
     try {
       await this.connection.connect(user.uid);
     } catch (ignored) { /* ignored */ }
 
-    reaction(() => this.groupsStore.groups, () => this.addGroupChats());
+    reaction(() => this.groupsStore.groups, () => this.initGroupChats());
 
     runInAction(() => {
       this.supportId = supportId;
@@ -73,7 +73,7 @@ export class CommonStore {
     });
   }
 
-  private addGroupChats = async () => {
+  private initGroupChats = async () => {
     const groups: Promise<void>[] = [];
 
     this.groupsStore.groups.forEach(g => {

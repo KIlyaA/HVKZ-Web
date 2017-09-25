@@ -110,17 +110,18 @@ export class Chat {
   @action 
   public composing(): void {
     if (!this.canSendStatus) {
-      console.log(false);
       return;
     }
 
-    const status = $msg({ to: this.jid, type: this.type })
+    if (this.connection.isConnected) {
+      const status = $msg({ to: this.jid, type: this.type })
       .c('composing', { xmlns: 'http://jabber.org/protocol/chatstates' });
 
-    this.connection.send(status);
-    this.canSendStatus = false;
+      this.connection.send(status);
+      this.canSendStatus = false;
 
-    setTimeout(action(() => this.canSendStatus = true), 6000);
+      setTimeout(action(() => this.canSendStatus = true), 6000);
+    }
   }
 
   @action
@@ -128,48 +129,54 @@ export class Chat {
     this.isToggled = true;
     this.isNewMessages = false;
 
-    const status = $msg({ to: this.jid, type: this.type })
+    if (this.connection.isConnected) {
+      const status = $msg({ to: this.jid, type: this.type })
       .c('active', { xmlns: 'http://jabber.org/protocol/chatstates' });
 
-    this.connection.send(status);
+      this.connection.send(status);
+    }
   }
 
   @action 
   public leave(): void {
     this.isToggled = false;
 
-    const status = $msg({ to: this.jid, type: this.type })
+    if (this.connection.isConnected) {
+      const status = $msg({ to: this.jid, type: this.type })
       .c('inactive', { xmlns: 'http://jabber.org/protocol/chatstates' });
 
-    this.connection.send(status);
+      this.connection.send(status);
+    }
   }
 
   @action
   // tslint:disable-next-line:no-any
   public sendMessage(text: string, images: string[] = [], forwarded: FWD[] = []): void {
-    const id = Strophe.getNodeFromJid(this.jid);
-    const recipientId = Number(id) || 0;
-    const timestamp = Math.floor(Date.now() / 1000);
-    const senderId = Number(this.connection.userId);
-
-    const message: Message = { 
-      body: text,
-      images,
-      forwarded,
-      senderId,
-      recipientId,
-      timestamp
-    };
-
-    const packet = $msg({ to: this.jid, type: this.type })
-      .c('body').t(JSON.stringify(message));
-
-    this.connection.send(packet);
-    this.lastTimestamp = timestamp;
-
-    this.messages.push(message);
-    this.unreads.push(message.timestamp);
-    this.historyManager.addMessage(this.jid, message);
+    if (this.connection.isConnected) {
+      const id = Strophe.getNodeFromJid(this.jid);
+      const recipientId = Number(id) || 0;
+      const timestamp = Math.floor(Date.now() / 1000);
+      const senderId = Number(this.connection.userId);
+  
+      const message: Message = { 
+        body: text,
+        images,
+        forwarded,
+        senderId,
+        recipientId,
+        timestamp
+      };
+  
+      const packet = $msg({ to: this.jid, type: this.type })
+        .c('body').t(JSON.stringify(message));
+  
+      this.connection.send(packet);
+      this.lastTimestamp = timestamp;
+  
+      this.messages.push(message);
+      this.unreads.push(message.timestamp);
+      this.historyManager.addMessage(this.jid, message);
+    }
   }
 
   @action 

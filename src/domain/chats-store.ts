@@ -74,6 +74,22 @@ export class ChatsStore {
     });
   }
 
+  public reInitChats(): void {
+    when(() => this.connection.isConnected, () => {
+      console.log('reinit');
+      this.chats.forEach(chat => {
+        if (chat.type === 'groupchat') {
+          const to = chat.jid + '/' + this.connection.userId;
+          const presence = $pres({ to })
+            .c('x', { xmlns: Strophe.NS.MUC })
+            .c('history', { maxstanzas: 100 });
+
+          this.connection.send(presence);
+        }
+      });
+    });
+  }
+
   @action
   private setChat(chatName: string, chat: Chat) {
     this.chats.set(chatName, chat);

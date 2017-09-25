@@ -11,6 +11,7 @@ import { Input } from './input';
 import { Layout } from './layout';
 import { MessagesList } from './messages-list';
 import { LightBox } from './lightbox';
+import { ConnectionStatus } from '../connection-status';
 
 interface ChatViewProps extends RouteComponentProps<{
   chatName: string;
@@ -49,6 +50,7 @@ export class ChatView extends React.Component<ChatViewProps> {
       <Layout>
         <LightBox/>
         <Header chat={this.chat}/>
+        <ConnectionStatus/>
         <MessagesList chat={this.chat}/>
         <Input chat={this.chat}/>
       </Layout>

@@ -34,9 +34,10 @@ const UploadInput = styled.input`
 
 interface UploadButtonProps {
   onChange: React.FormEventHandler<HTMLInputElement>;
+  disabled?: boolean;
 }
 
-export const UploadButton: React.SFC<UploadButtonProps> = ({ onChange }) => (
+export const UploadButton: React.SFC<UploadButtonProps> = ({ onChange, disabled }) => (
   <Wrapper>
     <UploadInput
       type="file"
@@ -44,6 +45,7 @@ export const UploadButton: React.SFC<UploadButtonProps> = ({ onChange }) => (
       multiple={true}
       id="upload-image-input"
       onChange={onChange}
+      disabled={disabled}
     />
     <UploadLabel htmlFor="upload-image-input"/>
   </Wrapper>
