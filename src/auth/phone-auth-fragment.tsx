@@ -11,6 +11,7 @@ import { Input, MaskedInput } from './components/input';
 import { Lead } from './components/lead';
 import { Submit } from './components/submit';
 import { Title } from './components/title';
+import { Error } from './components/error';
 
 // tslint:disable-next-line:no-any
 declare var grecaptcha: any;
@@ -76,6 +77,7 @@ export class PhoneAuthFragment extends React.Component {
           placeholder="Введите номер телефона"
           onChange={e => this.phoneNumber = e.currentTarget.value}
         />
+        {this.error && <Error>{this.error}</Error>}
         <Submit disabled={this.inProgress}>
           {this.inProgress ? 'Высылаем код' : 'Отправить код'}
         </Submit>
@@ -98,6 +100,7 @@ export class PhoneAuthFragment extends React.Component {
           placeholder="Введите код подтверждения"
           onChange={e => this.verificationCode = e.currentTarget.value}
         />
+        {this.error && <Error>{this.error}</Error>}
         <Submit disabled={this.inProgress}>Войти</Submit>
         {this.canSendCode &&
           <Action onClick={this.sendCode}>Отправить код повторно</Action>}

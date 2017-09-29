@@ -28,10 +28,6 @@ const BottomBarStructure: React.SFC<{className?: string }> = (props) => (
 );
 
 export const BottomBar = styled(BottomBarStructure)`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  
   box-sizing: border-box;
   box-shadow: 0px 0px 15px 0px rgba(0, 0, 0, 0.14);
 

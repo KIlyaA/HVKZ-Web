@@ -1,5 +1,5 @@
 import * as Firebase from 'firebase';
-import { observable, action, runInAction } from 'mobx';
+import { observable, runInAction } from 'mobx';
 
 import { inject, singleton } from '../utils/di';
 
@@ -16,30 +16,41 @@ export class GroupsStore {
   @observable.shallow
   public groups: Map<string, Group> = new Map();
 
+  private userId: number;
+
   @inject(Firebase.database)
   private databaseService: Firebase.database.Database;
 
-  public async init(): Promise<void> {
+  public async init(userId: number) {
+    this.userId = userId;
+
     const groupsReference = this.databaseService.ref('groups');
     const snapshot: Firebase.database.DataSnapshot = await groupsReference.once('value');
 
+    const groups: Group[] = [];
+
     runInAction(() => {
-      snapshot.forEach(entry => {
-        this.addGroup(entry);
+      snapshot.forEach(childSnapshot => {
+        const group = this.getGroupFromSnapshot(childSnapshot);
+  
+        if (group.admin === userId || group.members.indexOf(userId) !== -1) {
+          this.groups.set(group.name, group);
+          groups.push(group);
+        }
+  
         return false;
       });
     });
 
-    groupsReference.on('child_added', action(this.addGroup));
-    groupsReference.on('child_changed', action(this.addGroup));
+    return groups;
   }
 
-  private addGroup = (snapshot: Firebase.database.DataSnapshot) => {
+  private getGroupFromSnapshot = (snapshot: Firebase.database.DataSnapshot) => {
     const name = snapshot.key!;
 
     const info = snapshot.val();
     const group: Group = { name, ...info };
 
-    this.groups.set(name, group);
+    return group;
   }
 }

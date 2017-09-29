@@ -27,13 +27,23 @@ export class GalleryStore {
       return;
     }
 
-    const photos: Photo[] = [];
-
-    snapshot.forEach(p => {
-      photos.push(p.val());
-      return false;
+    reference.on('value', s => {
+      if (s != null) {
+        const photos: Photo[] = [];
+        
+        s.forEach(p => {
+          photos.push(p.val());
+          return false;
+        });
+        
+        this.galleries.set(userId, photos.sort((a, b) => b.date - a.date));
+      }
     });
+  }
 
-    this.galleries.set(userId, photos.sort((a, b) => b.date - a.date));
+  public async addToGallery(userId: number, url: string, description: string = '') {
+    const date = Math.floor(Date.now() / 1000);
+    const reference = this.databaseService.ref('photos/' + userId);
+    await reference.child(date.toString()).update({ date, url, description });
   }
 }

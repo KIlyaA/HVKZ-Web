@@ -2,7 +2,8 @@ import styled from 'styled-components';
 
 export const Submit = styled.button`
   padding: 10px 12px;
-
+  display: block;
+  
   color: #555;
   outline: none;
   border: 2px solid #555;

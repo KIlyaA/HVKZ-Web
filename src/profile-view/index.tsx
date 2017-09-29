@@ -9,8 +9,13 @@ import { inject } from '../utils/di';
 import { UsersStore } from '../domain/users-store';
 import { GalleryStore, Photo } from '../domain/gallery-store';
 import { User } from '../domain/user';
+import { FileUploadTask } from '../domain/file-upload-task';
+import { ImageUploader } from '../utils/image-uploader';
+import { CommonStore } from '../domain/common-store';
 
 import { Header } from './header';
+import { UploadDialog } from './upload/upload-dialog';
+import { UploadButton } from './upload/upload-button';
 
 const galleryOptions = {
   history: false,
@@ -35,6 +40,15 @@ class ProfileView extends React.Component<Props> {
 
   @inject(GalleryStore)
   private galleryStore: GalleryStore;
+
+  @inject(CommonStore)
+  private commonStore: CommonStore;
+
+  @inject(ImageUploader)
+  private imageUploader: ImageUploader;
+
+  @observable.ref
+  private uploadTask: FileUploadTask | null = null;
 
   @computed
   private get gallery(): Photo[] | null | undefined {
@@ -82,13 +96,20 @@ class ProfileView extends React.Component<Props> {
           thumbnailContent={this.getThumbnailContent}
           gettingData={this.onGettingData}
         />}
+        {this.props.userId === this.commonStore.currentUserId && 
+          <UploadButton onChange={this.handleUpload}/>}
+        {this.uploadTask !== null &&
+          <UploadDialog onDone={this.handleUploadDone} task={this.uploadTask}/>}
       </div>
     );
   }
 
   private getThumbnailContent = (photo: { src: string, title: string }) => {
     return (
-      <img src={photo.src} alt={photo.title} />
+      <div className="thumb">
+        <div className="image" style={{ backgroundImage: `url(${photo.src})` }}/>
+        <img src={photo.src} alt={photo.title} />
+      </div>
     );
   }
 
@@ -105,22 +126,49 @@ class ProfileView extends React.Component<Props> {
       item = null;
     }
   }
+
+  private handleUpload = async (event: React.FormEvent<HTMLInputElement>) => {
+    const file = Array.from(event.currentTarget.files || [])[0];
+
+    if (file) {
+      this.uploadTask = await this.imageUploader.upload(file);
+      event.currentTarget.value = '';    
+    }
+  }
+
+  private handleUploadDone = () => {
+    this.uploadTask = null;
+  }
 }
 
 const StyledProfileView = styled(ProfileView)`
+  position: relative;
+
   .pswp-thumbnails {
     display: flex;
     flex-flow: row wrap;
+    width: 100%;
   }
 
   .pswp-thumbnail {
     position: relative;
     width: 33.3333%;
-    padding-top: 33.3333%;
+    box-sizing: border-box;    
+    border-right: 2px solid #fff;
+    border-bottom: 2px solid #fff;
 
-    position: relative;
+    &:before {
+      display: block;
+      content: "";
+      width: 100%;      
+      padding-top: 100%;
+    }
 
-    > img {
+    &:nth-child(3n) {
+      border-right: none;
+    }
+
+    > .thumb {
       position: absolute;
       top: 0;
       right: 0;
@@ -128,6 +176,25 @@ const StyledProfileView = styled(ProfileView)`
       left: 0;
       width: 100%;
       height: 100%;
+
+      .image {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+
+        background-size: cover;
+        background-position: center;
+      }
+
+      img {
+        visibility: hidden;
+        width: 100%;
+        height: 100%;
+      }
     }
   }
 

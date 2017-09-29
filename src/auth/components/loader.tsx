@@ -17,8 +17,8 @@ const StyledLoader = styled(Loader)`
   > .spinner {
     margin: auto;
 
-    width: 128px;
-    height: 128px;
+    width: 64px;
+    height: 64px;
     user-select: none;
   }
 `;

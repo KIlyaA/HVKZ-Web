@@ -11,9 +11,11 @@ interface Props {
 const Header: React.SFC<Props> = ({ user, className }) => (
   <div className={className}>
     <div className="user">
-      <img 
+      <div 
         className="avatar"
-        src={user.photo || 'https://api.adorable.io/avatars/285/random@adorable.io.png'}
+        style={{ backgroundImage: `url(${
+          user.photo || 'https://api.adorable.io/avatars/285/random@adorable.io.png'
+        })` }}
       />
       <div>
         <h1 className="name">{user.name}</h1>
@@ -42,6 +44,8 @@ const StyledHeader = styled(Header)`
 
       border: 1px solid #83663b;
       border-radius: 50%;
+      background-size: cover;
+      background-position: center;
     }
 
     .name {

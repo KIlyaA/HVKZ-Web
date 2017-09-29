@@ -55,7 +55,7 @@ export class APIClient {
 
         return ids;
       }
-      console.log(Strophe.getNodeFromJid(roster.jid), Number(Strophe.getNodeFromJid(roster.jid)));
+      
       return [Number(Strophe.getNodeFromJid(roster.jid))];
     }
 

@@ -15,11 +15,15 @@ const LayoutStructure: React.SFC<{className?: string}> = (props) => (
 export const Layout = styled(LayoutStructure)`
   width: 100%;
   height: 100%;
-  overflow-y: auto;
-  position: relative;
+
+  display: flex;
+  flex-flow: column nowrap;
+
+  overflow: hidden;
 
   .viewport {
     width: 100%;
-    height: 100%;
+    flex: 1;
+    overflow-y: auto;
   }
 `;

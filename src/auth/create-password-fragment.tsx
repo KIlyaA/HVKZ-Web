@@ -10,6 +10,7 @@ import { Input } from './components/input';
 import { Lead } from './components/lead';
 import { Submit } from './components/submit';
 import { Title } from './components/title';
+import { Error } from './components/error';
 
 export interface CreatePasswordFragmentProps {
   onComplete: () => void;
@@ -44,6 +45,7 @@ export class CreatePasswordFragment extends React.Component<CreatePasswordFragme
           placeholder="Введите пароль"
           innerRef={ref => { this.passwordInput = ref; }}
         />
+        {this.error && <Error>{this.error}</Error>}
         <Submit disabled={this.inProgress}>Далее</Submit>
         <Action
           onClick={(e) => { e.preventDefault(); this.props.onComplete(); }}

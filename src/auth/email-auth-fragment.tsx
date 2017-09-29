@@ -9,6 +9,7 @@ import { Input } from './components/input';
 import { Lead } from './components/lead';
 import { Submit } from './components/submit';
 import { Title } from './components/title';
+import { Error } from './components/error';
 
 @observer
 export class EmailAuthFragment extends React.Component {
@@ -46,6 +47,7 @@ export class EmailAuthFragment extends React.Component {
           placeholder="Введите пароль"
           innerRef={ref => { this.passwordInput = ref; }}
         />
+        {this.error && <Error>{this.error}</Error>}
         <Submit disabled={this.inProgress}>Войти</Submit>
       </Form>
     );

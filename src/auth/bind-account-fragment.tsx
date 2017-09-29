@@ -9,6 +9,7 @@ import { Form } from './components/form';
 import { Input } from './components/input';
 import { Lead } from './components/lead';
 import { Submit } from './components/submit';
+import { Error } from './components/error';
 
 @observer
 export class BindAccountFragment extends React.Component {
@@ -41,6 +42,7 @@ export class BindAccountFragment extends React.Component {
           placeholder="Введите email"
           innerRef={ref => { this.emailInput = ref; }}
         />
+        {this.error && <Error>{this.error}</Error>}
         <Submit disabled={this.inProgress}>Далее</Submit>
       </Form>
     );

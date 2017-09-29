@@ -8,8 +8,6 @@ import progress from './progress.svg';
 
 interface UploadViewProps {
   task: FileUploadTask;
-
-  onCancel: (task: FileUploadTask) => void;
   className?: string;
 }
 
@@ -32,7 +30,7 @@ class UploadView extends React.Component<UploadViewProps> {
   public render(): JSX.Element | null {
     const { className, task } = this.props;
     return (
-      <div className={className} onClick={this.handleCancel}>
+      <div className={className}>
         {!task.isLoaded && <div className="progress">
           <img src={progress} alt=""/>
         </div>}
@@ -41,21 +39,10 @@ class UploadView extends React.Component<UploadViewProps> {
       </div>
     );
   }
-
-  private handleCancel = () => {
-    if (confirm('Отменить загрузку фотографии?')) {
-      this.props.onCancel(this.props.task);
-    }
-  }
 }
 
 const StyledUploadView = styled(UploadView)`
   position: relative;
-  width: 64px;
-  height: 64px;
-  display: inline-block;
-
-  cursor: pointer;
 
   .progress {
     position: absolute;
