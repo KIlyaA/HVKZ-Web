@@ -1,10 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import { MenuItem } from '../../domain/common-store';
+import { MenuItem } from '../../domain/models';
 
 interface Props {
-  // tslint:disable-next-line:no-any
   menu: MenuItem;
   className?: string;
 }

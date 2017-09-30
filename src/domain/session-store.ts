@@ -1,10 +1,10 @@
 import { auth as Auth, User as Session } from 'firebase';
 import { action, computed, observable, runInAction, when } from 'mobx';
 
-import { APIClient } from '../api';
 import { inject, singleton } from '../utils/di';
-import { User } from './user';
+import { APIClient } from '../api';
 import { CommonStore } from './common-store';
+import { User } from './models';
 
 @singleton(SessionStore)
 export class SessionStore {

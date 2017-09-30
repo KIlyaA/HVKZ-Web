@@ -3,17 +3,12 @@ import { observable, runInAction, action, computed } from 'mobx';
 
 import { singleton, inject } from '../utils/di';
 import { APIClient } from '../api';
+import { XMPP } from './xmpp';
 import { ChatsStore } from './chats-store';
-import { Connection } from './connection';
 import { UsersStore } from './users-store';
 import { GroupsStore } from './groups-store';
 import { GalleryStore } from './gallery-store';
-import { User } from './user';
-
-export interface MenuItem {
-  bzu: number[];
-  dayArray: string[];
-}
+import { MenuItem, User } from './models';
 
 @singleton(CommonStore)
 export class CommonStore {
@@ -30,8 +25,8 @@ export class CommonStore {
   @observable.ref
   public menu: MenuItem[] = [];
 
-  @inject(Connection)
-  private connection: Connection;
+  @inject(XMPP)
+  private xmpp: XMPP;
 
   @inject(ChatsStore)
   private chatsStore: ChatsStore;
@@ -61,15 +56,20 @@ export class CommonStore {
     this.currentUserId = user.uid;
     this.usersStore.users.set(user.uid, user);
     
+    console.log('USER_DATA');
     await this.initUserData();
+
+    console.log('SETTINGS');
     await this.initSettings();
+
+    console.log('CHATS');
     await this.initChats();
 
-    console.log(this.connection.isConnected);
-
+    console.log(this.xmpp.error);
+    
     // try {
-    //   await this.connection.connect(user.uid);
-    // } catch (ignored) { /* ignored */ }
+    //   await this.xmpp.connect(user.uid);
+    // } catch { /* ignored */ }
 
     runInAction(() => {
       this.isInit = true;
@@ -82,10 +82,10 @@ export class CommonStore {
     }
 
     const groupsChats = (await this.groupsStore.init(this.currentUserId))
-      .map(g => this.chatsStore.addGroupChat(g.name));
+      .map(this.chatsStore.addGroupChat);
 
     const personalChats = (await this.apiClient.getRoster(this.currentUserId.toString()))
-      .map(userId => this.chatsStore.addPersonalChat(userId));
+      .map(this.chatsStore.addPersonalChat);
 
     await Promise.all(personalChats.concat(groupsChats));
   }

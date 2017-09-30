@@ -1,8 +1,8 @@
 import PouchDB from 'pouchdb-browser';
 
-import { Message } from '../domain/chat';
 import { singleton } from './di';
 import { Mutex } from './mutex';
+import { Message } from '../domain/models';
 
 interface Chat {
   unreads: number[];

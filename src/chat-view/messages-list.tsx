@@ -6,9 +6,10 @@ import styled from 'styled-components';
 
 import { inject } from '../utils/di';
 import { CommonStore } from '../domain/common-store';
-import { UsersStore } from '../domain/users-store';
-import { Chat, Message } from '../domain/chat';
-import { UnknownUser } from '../domain/user';
+import { UsersStore, unknownUser } from '../domain/users-store';
+import { Chat } from '../domain/chat';
+import { Message } from '../domain/models';
+
 import { MessageItem } from './message-item';
 import background from './background.png';
 
@@ -55,7 +56,7 @@ class MessagesList extends React.Component<MessagesListProps> {
   }
 
   private renderMessage = (message: Message, index: number, messages: Message[]): JSX.Element => {
-    const user = this.usersStore.users.get(message.senderId) || UnknownUser;
+    const user = this.usersStore.users.get(message.senderId) || unknownUser;
     const isOut = this.commonStore.currentUserId === message.senderId;
     const prevMessage = messages[index - 1] || null;
 

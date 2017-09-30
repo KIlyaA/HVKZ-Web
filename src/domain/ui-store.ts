@@ -1,7 +1,7 @@
 import { observable } from 'mobx';
-import { singleton } from '../utils/di';
 
-import { Message } from './chat';
+import { singleton } from '../utils/di';
+import { Message } from './models';
 
 @singleton(UIStore)
 export class UIStore {

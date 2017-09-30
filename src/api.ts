@@ -1,7 +1,7 @@
 import { Strophe } from 'strophe.js';
 
-import { User } from './domain/user';
 import { singleton } from './utils/di';
+import { User } from './domain/models';
 
 const baseUrl = 'http://api.hvkz.org:9090/plugins/restapi/v1/';
 const openfireHeaders = {
@@ -60,5 +60,18 @@ export class APIClient {
     }
 
     return [];
+  }
+  
+  public async createChatAccount(userId: number, password: string): Promise<boolean> {
+    const body = JSON.stringify({ username: userId, password });
+
+    const response = await fetch(baseUrl + 'users', { 
+      method: 'POST', 
+      headers: openfireHeaders, 
+      body 
+    });
+
+    // created or conflict
+    return response.status === 201 || response.status === 409;
   }
 }

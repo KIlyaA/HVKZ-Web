@@ -2,16 +2,14 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { Strophe } from 'strophe.js';
 import styled from 'styled-components';
 
 import { Chat } from '../../domain/chat';
 import { ChatsStore } from '../../domain/chats-store';
-import { Group } from '../../domain/groups-store';
-import { User } from '../../domain/user';
 import { UsersStore } from '../../domain/users-store';
 import { inject } from '../../utils/di';
 import { ChatItem } from './chat-item';
+import { Group, User } from '../../domain/models';
 
 export interface GroupItemProps {
   group: Group;
@@ -39,7 +37,6 @@ class GroupItemStructure extends React.Component<GroupItemProps> {
 
   public render(): JSX.Element {
     const { group, className } = this.props;
-
     return (
       <div className={className}>
         {this.admin && (
@@ -57,8 +54,8 @@ class GroupItemStructure extends React.Component<GroupItemProps> {
       )}
       {!!this.chat && (
         <Link
-          key={this.chat.jid}
-          to={`/im/${Strophe.getNodeFromJid(this.chat.jid)}`} 
+          key={this.chat.id}
+          to={'/im/' + this.chat.id} 
         >
             <ChatItem chat={this.chat}/>
         </Link>)}

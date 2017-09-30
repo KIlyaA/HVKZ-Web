@@ -36,7 +36,6 @@ export class FileUploadTask {
     this.uploadTask = uploadTask;
     this.reference = uploadTask.snapshot.ref;
 
-    uploadTask.on('state_changed', this.handleUploadStatusChange);
     uploadTask.then(this.uploadSuccess, this.uploadFailed);
   }
 
@@ -49,11 +48,6 @@ export class FileUploadTask {
     
     this.isCanceled = true;
     this.uploadTask.cancel();
-  }
-
-  @action
-  private handleUploadStatusChange = (snapshot: Firebase.storage.UploadTaskSnapshot) => {
-    this.progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
   }
 
   @action

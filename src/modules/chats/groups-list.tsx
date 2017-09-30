@@ -1,25 +1,22 @@
-import { UIStore } from '../../domain/ui-store';
 import { computed, action } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import styled from 'styled-components';
 import Slider, { SiemaSliderProps }  from 'react-siema';
 
-import { Group, GroupsStore } from '../../domain/groups-store';
-import { SessionStore } from '../../domain/session-store';
+import { GroupsStore } from '../../domain/groups-store';
+import { UIStore } from '../../domain/ui-store';
 import { inject } from '../../utils/di';
 import { GroupItem } from './group-item';
 
 import clock from './clock.svg';
+import { Group } from '../../domain/models';
 
 @observer
 class GroupsListStructure extends React.Component<{ className?: string }> {
 
   @inject(GroupsStore)
   private groupsStore: GroupsStore;
-
-  @inject(SessionStore)
-  private sessionStore: SessionStore;
 
   @inject(UIStore)
   private uiStore: UIStore;
@@ -41,12 +38,9 @@ class GroupsListStructure extends React.Component<{ className?: string }> {
   @computed
   private get groups(): Group[] {
     const groups: Group[] = [];
-    const userId = this.sessionStore.currentUserId;
 
     this.groupsStore.groups.forEach(group => {
-      if (group.admin === userId || group.members.indexOf(userId!) !== -1) {
         groups.push(group);
-      }
     });
 
     return groups;

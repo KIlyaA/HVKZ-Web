@@ -5,6 +5,7 @@ import * as Firebase from 'firebase';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { injectGlobal } from 'styled-components';
+import DevTools from 'mobx-react-devtools';
 
 import { Application } from './application';
 import { bind } from './utils/di';
@@ -55,4 +56,4 @@ injectGlobal`
   }
 `;
 
-ReactDOM.render((<div><Application/></div>), document.getElementById('root'));
+ReactDOM.render((<div><DevTools/><Application/></div>), document.getElementById('root'));

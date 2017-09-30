@@ -5,11 +5,10 @@ import { computed } from 'mobx';
 
 import { inject } from '../../utils/di';
 import { UIStore } from '../../domain/ui-store';
-import { Message } from '../../domain/chat';
-import { User } from '../../domain/user';
 
 import { Images } from './images';
 import { ForwadedMessage } from './forwaded';
+import { Message, User } from '../../domain/models';
 
 export interface MessageItemProps {
   message: Message;

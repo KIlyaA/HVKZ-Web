@@ -8,10 +8,10 @@ import { PhotoSwipeGallery } from 'react-photoswipe';
 import { inject } from '../utils/di';
 import { UsersStore } from '../domain/users-store';
 import { GalleryStore, Photo } from '../domain/gallery-store';
-import { User } from '../domain/user';
 import { FileUploadTask } from '../domain/file-upload-task';
 import { ImageUploader } from '../utils/image-uploader';
 import { CommonStore } from '../domain/common-store';
+import { User } from '../domain/models';
 
 import { Header } from './header';
 import { UploadDialog } from './upload/upload-dialog';

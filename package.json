@@ -34,7 +34,8 @@
     "@types/react-router-dom": "^4.0.7",
     "@types/pouchdb-browser": "^6.1.1",
     "@types/react-transition-group": "^2.0.4",
-    "mobx-react-devtools": "^4.2.15"
+    "mobx-react-devtools": "^4.2.15",
+    "typescript": "^2.5.2"
   },
   "scripts": {
     "start": "react-scripts-ts start",

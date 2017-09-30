@@ -1,8 +1,7 @@
-import { computed } from 'mobx';
-import { observer } from 'mobx-react';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { Strophe } from 'strophe.js';
+import { computed } from 'mobx';
+import { observer } from 'mobx-react';
 
 import { inject } from '../../utils/di';
 import { Chat } from '../../domain/chat';
@@ -32,7 +31,7 @@ export class ChatsPage extends React.Component {
         return;
       }
       
-      const chatId = Number(Strophe.getNodeFromJid(chat.jid));
+      const chatId = Number(chat.id);
       if (
         (chat.type === 'chat' && chat.messages.length !== 0)
         || chatId === this.commonStore.supportId) {
@@ -52,8 +51,8 @@ export class ChatsPage extends React.Component {
         {this.chats.map(chat => {
           return (
             <Link
-              key={chat.jid}
-              to={`/im/${Strophe.getNodeFromJid(chat.jid)}`} 
+              key={chat.id}
+              to={'/im/' + chat.id} 
               style={{ textDecoration: 'none' }}
             >
               <ChatItem chat={chat}/>

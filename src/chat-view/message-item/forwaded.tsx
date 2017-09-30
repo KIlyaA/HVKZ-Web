@@ -2,9 +2,8 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import { inject } from '../../utils/di';
-import { FWD } from '../../domain/chat';
-import { UnknownUser } from '../../domain/user';
-import { UsersStore } from '../../domain/users-store';
+import { unknownUser, UsersStore } from '../../domain/users-store';
+import { FWD } from '../../domain/models';
 
 const getMonth = (index: number): string => {
   switch (index) {
@@ -31,7 +30,7 @@ class ForwadedMessage extends React.Component<{ className?: string, message: FWD
 
   public render(): JSX.Element | null {
     const { className, message } = this.props;
-    const user = this.usersStore.users.get(message.sender) || UnknownUser;
+    const user = this.usersStore.users.get(message.sender) || unknownUser;
 
     const date = new Date(message.timestamp * 1000);
     const minutes = (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();

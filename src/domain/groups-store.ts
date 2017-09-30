@@ -2,13 +2,7 @@ import * as Firebase from 'firebase';
 import { observable, runInAction } from 'mobx';
 
 import { inject, singleton } from '../utils/di';
-
-export interface Group {
-  name: string;
-  admin: number;
-  members: number[];
-  notice: string;
-}
+import { Group } from './models';
 
 @singleton(GroupsStore)
 export class GroupsStore {

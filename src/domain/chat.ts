@@ -1,30 +1,15 @@
-import { inject } from '../utils/di';
-import { HistoryManager } from '../utils/history-manager';
+import { XMPPReceiver } from '../utils/xmpp-receiver';
 import { action, computed, observable, runInAction } from 'mobx';
-import { $msg, Strophe } from 'strophe.js';
 
-import { Connection } from './connection';
-
-export interface Message {
-  body: string;
-  images: string[];
-  forwarded: FWD[];
-  senderId: number;
-  recipientId: number;
-  timestamp: number;
-}
-
-export interface FWD {
-  images: string[];
-  message: string;
-  sender: number;
-  timestamp: number;
-}
+import { inject } from '../utils/di';
+import { XMPP } from './xmpp';
+import { HistoryManager } from '../utils/history-manager';
+import { Message, FWD } from './models';
 
 export class Chat {
 
-  public readonly jid: string;
-  public readonly type: string;
+  public readonly id: string;
+  public readonly type: 'chat' | 'groupchat';
 
   @observable
   public isFetching: boolean = false;
@@ -39,7 +24,7 @@ export class Chat {
   public isToggled: boolean = false;
 
   @observable.shallow
-  public messages: Array<Message> = [];
+  public messages: Message[] = [];
 
   @observable 
   public unreads: Array<number> = [];
@@ -50,9 +35,13 @@ export class Chat {
   @observable 
   public isNewMessages: boolean = false;
 
-  private connection: Connection;
-
   private lastTimestamp: number = 0;
+
+  @inject(XMPP)
+  private xmpp: XMPP;
+
+  @inject(XMPPReceiver)
+  private receiver: XMPPReceiver;
 
   @inject(HistoryManager)
   private historyManager: HistoryManager;
@@ -62,18 +51,24 @@ export class Chat {
     return this.messages[this.messages.length - 1] || null;
   }
 
-  constructor(connection: Connection, jid: string, type: 'chat' | 'groupchat') {
-    this.connection = connection;
+  constructor(id: string, type: 'chat' | 'groupchat') {
+    this.id = id;    
     this.type = type;
-    this.jid = jid;
 
-    connection.addListener({
-      handler: this.onStanzaReceive,
-      from: jid,
-      name: 'message'
-    });
+    if (type === 'groupchat') {
+      this.xmpp.joinToRoom(id);
+    }
 
+    this.receiver.registerChat(this);
     this.loadHistory();
+  }
+
+  public destroy() {
+    this.receiver.unregisterChat(this);
+
+    if (this.type === 'groupchat') {
+      this.xmpp.leaveRoom(this.id);
+    }
   }
 
   public async loadHistory() {
@@ -88,7 +83,7 @@ export class Chat {
 
     try {
       this.isFetching = true;
-      const history = await this.historyManager.getHistory(this.jid, lastTimestamp);
+      const history = await this.historyManager.getHistory(this.id, lastTimestamp);
   
       if (history === null) {
         this.canLoadHistory = false;
@@ -113,15 +108,12 @@ export class Chat {
       return;
     }
 
-    if (this.connection.isConnected) {
-      const status = $msg({ to: this.jid, type: this.type })
-      .c('composing', { xmlns: 'http://jabber.org/protocol/chatstates' });
-
-      this.connection.send(status);
+    try {
+      this.xmpp.sendStatus(this.id, this.type, 'composing');
       this.canSendStatus = false;
-
+      
       setTimeout(action(() => this.canSendStatus = true), 6000);
-    }
+    } catch { /* ignored */ }
   }
 
   @action
@@ -129,34 +121,27 @@ export class Chat {
     this.isToggled = true;
     this.isNewMessages = false;
 
-    if (this.connection.isConnected) {
-      const status = $msg({ to: this.jid, type: this.type })
-      .c('active', { xmlns: 'http://jabber.org/protocol/chatstates' });
-
-      this.connection.send(status);
-    }
+    try {
+      this.xmpp.sendStatus(this.id, this.type, 'active');
+    } catch { /* ignored */ }
   }
 
   @action 
   public leave(): void {
     this.isToggled = false;
 
-    if (this.connection.isConnected) {
-      const status = $msg({ to: this.jid, type: this.type })
-      .c('inactive', { xmlns: 'http://jabber.org/protocol/chatstates' });
-
-      this.connection.send(status);
-    }
+    try {
+      this.xmpp.sendStatus(this.id, this.type, 'inactive');
+    } catch { /* ignored */ }
   }
 
   @action
   // tslint:disable-next-line:no-any
   public sendMessage(text: string, images: string[] = [], forwarded: FWD[] = []): void {
-    if (this.connection.isConnected) {
-      const id = Strophe.getNodeFromJid(this.jid);
-      const recipientId = Number(id) || 0;
+    try {
+      const recipientId = Number(this.id) || 0;
       const timestamp = Math.floor(Date.now() / 1000);
-      const senderId = Number(this.connection.userId);
+      const senderId = Number(this.xmpp.userId);
   
       const message: Message = { 
         body: text,
@@ -167,21 +152,22 @@ export class Chat {
         timestamp
       };
   
-      const packet = $msg({ to: this.jid, type: this.type })
-        .c('body').t(JSON.stringify(message));
-  
-      this.connection.send(packet);
+      const content = JSON.stringify(message);
+      this.xmpp.sendMessage(this.id, this.type, content);
       this.lastTimestamp = timestamp;
   
       this.messages.push(message);
       this.unreads.push(message.timestamp);
-      this.historyManager.addMessage(this.jid, message);
-    }
+      this.historyManager.addMessage(this.id, message);
+    } catch (e) { console.log(e); /* ignored */}
   }
 
   @action 
-  private onStatusChanged(status: string, senderId: number): void {
-    console.log(this.jid, status);
+  public onStatusChanged(status: string, senderId: number): void {
+    if (senderId === this.xmpp.userId) {
+      return;
+    }
+    
     switch (name) {
       case 'inactive': {
         this.removeFromWriters(senderId);
@@ -207,17 +193,23 @@ export class Chat {
     console.log(status, senderId);
   }
 
-  // tslint:disable-next-line:no-any
   @action 
-  private async onMessageReceive(message: Message) {
-    if (message.timestamp === this.lastTimestamp && this.type === 'groupchat') {
-      return;
-    }
-        
-    if (await this.historyManager.addMessage(this.jid, message)) {
-      this.unreads = [];
-      this.messages.push(message);
-    }
+  // tslint:disable-next-line:no-any
+  public async onMessageReceive(content: any) {
+    try {
+      const message: Message = JSON.parse(content);
+      
+      if (message.timestamp === this.lastTimestamp && this.type === 'groupchat') {
+        return;
+      }
+          
+      if (await this.historyManager.addMessage(this.id, message)) {
+        this.unreads = [];
+        this.messages.push(message);
+      }
+  
+      this.isNewMessages = this.isToggled;
+    } catch {/* ignored */}
   }
 
   private removeFromWriters(senderId: number) {
@@ -226,43 +218,5 @@ export class Chat {
     if (~index) {
       this.writers.splice(index, 1);
     }
-  }
-
-  private onStanzaReceive = (stanza: Element): boolean => {
-    try {
-      const child = stanza.children[0];
-      const childName = child.tagName.toLowerCase();
-
-      switch (childName) {
-        case 'body': {
-          const message: Message = JSON.parse(child.innerHTML);
-          this.onMessageReceive(message);
-          this.isNewMessages = this.isToggled;
-          break;
-        }
-
-        case 'active':
-        case 'inactive':
-        case 'composing': {
-          const from = stanza.getAttribute('from')!;
-          const senderId = Number.parseInt(
-            from.replace(this.jid + '/', '') || Strophe.getNodeFromJid(from));
-          const name = childName;
-
-          if (senderId === Number(this.connection.userId)) {
-            break;
-          }
-
-          this.onStatusChanged(name, senderId);
-          break;
-        }
-
-        default: break;
-      }
-    } catch (e) {
-      console.log(e);
-    }
-
-    return true;
   }
 }

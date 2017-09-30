@@ -1,15 +1,14 @@
 import * as React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router';
-import { Strophe } from 'strophe.js';
 import styled, { keyframes } from 'styled-components';
 
 import { Chat } from '../domain/chat';
 import { GroupsStore } from '../domain/groups-store';
-import { UnknownUser, User } from '../domain/user';
-import { UsersStore } from '../domain/users-store';
+import { unknownUser, UsersStore } from '../domain/users-store';
 import { inject } from '../utils/di';
 import { declOfNum } from '../utils/decl-of-num';
 import arrow from './arrow-left.svg';
+import { User } from '../domain/models';
 
 const marquee = keyframes`
   0%   { transform: translate(0, 0); }
@@ -93,15 +92,15 @@ export class Header extends React.Component<HeaderProps> {
 
   private get user(): User {
     if (!this.props.chat) {
-      return UnknownUser;
+      return unknownUser;
     }
 
-    const chatName = Strophe.getNodeFromJid(this.props.chat.jid);
+    const chatName = this.props.chat.id;
     const userId = this.props.chat.type === 'groupchat'
       ? this.groupsStore.groups.get(chatName)!.admin
       : Number(chatName);
 
-    return this.usersStore.users.get(userId) || UnknownUser;
+    return this.usersStore.users.get(userId) || unknownUser;
   }
 
   private get router(): RouteComponentProps<{}> {
@@ -139,7 +138,7 @@ export class Header extends React.Component<HeaderProps> {
   }
 
   private getStatus(): string {
-    const chatName = Strophe.getNodeFromJid(this.props.chat.jid);
+    const chatName = this.props.chat.id;
 
     if (this.props.chat.type === 'chat') {
       return 'В сети';

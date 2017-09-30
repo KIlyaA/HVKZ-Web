@@ -1,4 +1,3 @@
-import { Connection } from '../../domain/connection';
 import { observable, action } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
@@ -6,8 +5,11 @@ import styled from 'styled-components';
 import Textarea from 'react-textarea-autosize';
 
 import { inject } from '../../utils/di';
-import { Chat, FWD } from '../../domain/chat';
+import { XMPP } from '../../domain/xmpp';
 import { UIStore } from '../../domain/ui-store';
+import { Chat } from '../../domain/chat';
+import { FWD } from '../../domain/models';
+
 import { FileUploadTask } from '../../domain/file-upload-task';
 import { ImageUploader } from '../../utils/image-uploader';
 import { declOfNum } from '../../utils/decl-of-num';
@@ -97,8 +99,8 @@ export class Input extends React.Component<InputProps> {
   @observable.shallow
   private uploads: FileUploadTask[] = [];
 
-  @inject(Connection)
-  private connection: Connection;
+  @inject(XMPP)
+  private xmpp: XMPP;
 
   @inject(ImageUploader)
   private imageUploader: ImageUploader;
@@ -130,8 +132,8 @@ export class Input extends React.Component<InputProps> {
       {this.uploads.length !== 0 && (
         <Images>{this.uploads.map(upload => this.renderUploadView(upload))}</Images>
       )}
-      <Form onSubmit={this.handleSubmit} disabled={!this.connection.isConnected}>
-        <UploadButton onChange={this.uploadImages} disabled={!this.connection.isConnected}/>
+      <Form onSubmit={this.handleSubmit} disabled={!this.xmpp.isConnected}>
+        <UploadButton onChange={this.uploadImages} disabled={!this.xmpp.isConnected}/>
         <MessageInput
           maxRows={3}
           placeholder="Введите сообщение..."
@@ -157,7 +159,7 @@ export class Input extends React.Component<InputProps> {
   private handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!this.connection.isConnected) {
+    if (!this.xmpp.isConnected) {
       alert('Отправка сообщения невозможна по причине отсутствия подключения');
       return;
     }

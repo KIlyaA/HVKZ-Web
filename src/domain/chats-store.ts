@@ -1,117 +1,47 @@
-import { action, observable, when } from 'mobx';
-import { $pres, Strophe } from 'strophe.js';
+import { Group } from './models';
+import { UsersStore } from './users-store';
+import { observable, action } from 'mobx';
 
 import { inject, singleton } from '../utils/di';
 import { HistoryManager } from '../utils/history-manager';
 import { Chat } from './chat';
-import { Connection } from './connection';
-import { GroupsStore } from './groups-store';
-import { UsersStore } from './users-store';
 
 @singleton(ChatsStore)
 export class ChatsStore {
-
+  
   @observable.shallow
   public chats: Map<string, Chat> = new Map();
-  
-  @inject(Connection)
-  private connection: Connection;
 
   @inject(UsersStore)
   private usersStore: UsersStore;
 
-  @inject(GroupsStore)
-  private groupsStore: GroupsStore;
-
   @inject(HistoryManager)
   private historyManager: HistoryManager;
 
-  public constructor() {
-    this.connection.addListener({ handler: this.onNewChat, name: 'message' });
-    this.connection.addListener({ handler: this.onNewChat, name: 'presence' }); 
+  public addPersonalChat = async (userId: number) => {
+    try {
+      await this.createChat(userId.toString(), 'chat');
+      await this.usersStore.addUser(userId);
+    } catch { /* ignored */ }
   }
 
-  public async addPersonalChat(userId: number) {
-    if (this.chats.has(userId.toString())) {
-      return;
-    }
-
-    const jid = userId + '@s0565719c.fastvps-server.com';
-
-    await this.usersStore.addUser(Number(userId));
-    await this.historyManager.initChat(jid);
-
-    const chat = new Chat(this.connection, jid, 'chat');
-
-    this.setChat(userId.toString(), chat);
-  }
-
-  public async addGroupChat(groupName: string) {
-    if (this.chats.has(groupName)) {
-      return;
-    }
-
-    const group = this.groupsStore.groups.get(groupName)!;
-
-    await this.usersStore.addUser(group.admin);
-    group.members.forEach(member => {
-      this.usersStore.addUser(member);
-    });
-
-    const jid = groupName + '@conference.s0565719c.fastvps-server.com';
-    await this.historyManager.initChat(jid);
-
-    const chat = new Chat(this.connection, jid, 'groupchat');
-    this.setChat(groupName, chat);
-    
-    when(() => this.connection.isConnected, () => {
-      const to = jid + '/' + this.connection.userId;
-      const presence = $pres({ to })
-        .c('x', { xmlns: Strophe.NS.MUC })
-        .c('history', { maxstanzas: 100 });
-
-      this.connection.send(presence);
-    });
-  }
-
-  public reInitChats(): void {
-    when(() => this.connection.isConnected, () => {
-      console.log('reinit');
-      this.chats.forEach(chat => {
-        if (chat.type === 'groupchat') {
-          const to = chat.jid + '/' + this.connection.userId;
-          const presence = $pres({ to })
-            .c('x', { xmlns: Strophe.NS.MUC })
-            .c('history', { maxstanzas: 100 });
-
-          this.connection.send(presence);
-        }
-      });
-    });
+  public addGroupChat = async (group: Group) => {
+    try {
+      await this.createChat(group.name, 'groupchat');
+      await this.usersStore.addUser(group.admin);
+      Promise.all(group.members.map(member => this.usersStore.addUser(member)));
+    } catch { /* ignored */ }
   }
 
   @action
-  private setChat(chatName: string, chat: Chat) {
-    this.chats.set(chatName, chat);
-  }
-
-  private onNewChat = (stanza: Element) => {
-    try {
-      const from = stanza.getAttribute('from');
-      const type = stanza.getAttribute('type');
-      const id = Strophe.getNodeFromJid(from!);
-
-      if (!this.chats.has(id)) {
-        if (type === 'chat') {
-          this.addGroupChat(id);
-        } else if (type === 'groupchat') {
-          this.addPersonalChat(Number(id));
-        }
-      }
-    } catch (e) {
-      // 
+  private async createChat(chatId: string, type: 'chat' | 'groupchat') {
+    if (this.chats.has(chatId)) {
+      throw new Error('Chat already exists');
     }
 
-    return true;
+    const chat = new Chat(chatId, type);
+    this.chats.set(chatId, chat);
+    await this.historyManager.initChat(chatId);
+    return chat;
   }
 }

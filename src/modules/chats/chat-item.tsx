@@ -1,16 +1,15 @@
 import { computed } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
-import { Strophe } from 'strophe.js';
 import styled from 'styled-components';
 
-import { Chat, Message } from '../../domain/chat';
+import { inject } from '../../utils/di';
 import { SessionStore } from '../../domain/session-store';
-import { User } from '../../domain/user';
 import { UsersStore } from '../../domain/users-store';
 import { CommonStore } from '../../domain/common-store';
 
-import { inject } from '../../utils/di';
+import { Chat } from '../../domain/chat';
+import { User, Message } from '../../domain/models';
 
 interface ChatItemProps {
   chat: Chat;
@@ -31,10 +30,10 @@ class ChatItemStructure extends React.Component<ChatItemProps> {
 
   @computed
   private get user(): User | undefined {
-    const { type, lastMessage, jid } = this.props.chat;
+    const { type, lastMessage, id } = this.props.chat;
 
     if (type === 'chat') {
-      return this.usersStore.users.get(Number(Strophe.getNodeFromJid(jid))) || void 0;
+      return this.usersStore.users.get(Number(id)) || void 0;
     }
 
     return lastMessage != null ?
@@ -73,7 +72,7 @@ class ChatItemStructure extends React.Component<ChatItemProps> {
   private getMessageText(message: Message | null): string {
     if (message === null) {
       const chat = this.props.chat;
-      if (Number(Strophe.getNodeFromJid(chat.jid)) === this.commonStore.supportId) {
+      if (Number(chat.id) === this.commonStore.supportId) {
         return 'Вы можете задать свой вопрос мне';
       }
 

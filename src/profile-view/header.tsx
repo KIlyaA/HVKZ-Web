@@ -1,6 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { User } from '../domain/user';
+
+import { User } from '../domain/models';
 import { UserData } from './user-data';
 
 interface Props {
