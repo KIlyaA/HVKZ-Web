@@ -10,6 +10,7 @@ import { CommonStore } from '../../domain/common-store';
 
 import { Chat } from '../../domain/chat';
 import { User, Message } from '../../domain/models';
+import { TypingIndicator } from '../../typing-indicator';
 
 interface ChatItemProps {
   chat: Chat;
@@ -55,16 +56,20 @@ class ChatItemStructure extends React.Component<ChatItemProps> {
             'https://api.adorable.io/avatars/285/random@adorable.io.png'}
           alt={!!this.user ? this.user.name : 'Неизвестный пользователь'}
         />
-        <div className="right">
-          <div className="info">
-            <div className="name">
-              {!!this.user ? this.getSenderName(this.user.name) : 'Неизвестный пользователь'}
-            </div>
-            {!!lastMessage && 
-              <div className="time">{this.getTimeMessage(lastMessage.timestamp)}</div>}
+        <div className="center">
+          <div className="name">
+            {!!this.user ? this.getSenderName(this.user.name) : 'Неизвестный пользователь'}
           </div>
           <p className="content">{this.getMessageText(lastMessage)}</p>
         </div>
+        {!!lastMessage && (
+          <div className="right">  
+            <div className="time">
+              {this.getTimeMessage(lastMessage.timestamp)}
+            </div>
+            {this.props.chat.isComposing && <TypingIndicator/>}
+          </div>
+        )}
       </div>
     );
   }
@@ -84,8 +89,8 @@ class ChatItemStructure extends React.Component<ChatItemProps> {
   }
   
   private getTimeMessage(timestamp: number): string {
-    const date = new Date(timestamp);
-    return date.getHours() + ':' + date.getMinutes();
+    const date = new Date(timestamp * 1000);
+    return date.getHours() + ':' + (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
   }
 
   private getSenderName(name: string): string {
@@ -121,16 +126,9 @@ export const ChatItem = styled(ChatItemStructure)`
     border-radius: 50%;
   }
 
-  > .right {
+  > .center {
     flex: 1;
-    overflow: hidden; 
-  }
-
-  .info {
-    display: flex;
-    flex-flow: row nowrap;
-    justify-content: space-between;
-    align-items: center;
+    overflow: hidden;
 
     > .name {
       font-size: 14px;
@@ -138,10 +136,17 @@ export const ChatItem = styled(ChatItemStructure)`
       margin-right: 10px;
       color: #555;
     }
+  }
 
+  > .right {
     > .time {
       font-size: 12.5px;
       color: #555;
+    }
+
+    > ${TypingIndicator} {
+      width: auto;
+      margin: 0 auto;
     }
   }
 

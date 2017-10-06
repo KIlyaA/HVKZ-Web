@@ -23,8 +23,9 @@ class Images extends React.Component<ImagesProps> {
         {urls.map((url, index) => (
           <div key={url}>
             <img
-              onClick={this.handleClick.bind(this, index)} 
+              onClick={this.handleClick} 
               src={url.replace('&amp;', '&')}
+              data-index={index}
             />
           </div>
         ))}
@@ -33,11 +34,16 @@ class Images extends React.Component<ImagesProps> {
   }
 
   @action
-  private handleClick = (index: number) => {
+  private handleClick = (event: React.MouseEvent<HTMLImageElement>) => {
+    event.stopPropagation();
+    const index = event.currentTarget.getAttribute('data-index');
     console.log(index);
-    this.uiStore.currentImages = this.props.urls.slice();
-    this.uiStore.indexImage = index;    
-    this.uiStore.isOpenGallery = true;
+
+    if (index) {
+      this.uiStore.currentImages = this.props.urls.map(url => ({ url }));
+      this.uiStore.indexImage = Number(index);    
+      this.uiStore.isOpenGallery = true;
+    }
   }
 }
 

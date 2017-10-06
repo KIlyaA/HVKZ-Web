@@ -1,7 +1,7 @@
 import { observable } from 'mobx';
 
 import { singleton } from '../utils/di';
-import { Message } from './models';
+import { Message, Photo } from './models';
 
 @singleton(UIStore)
 export class UIStore {
@@ -13,7 +13,7 @@ export class UIStore {
   public selectedMessages: Map<string, Message> = new Map();
 
   @observable.shallow
-  public currentImages: string[] = [];
+  public currentImages: Photo[] = [];
 
   @observable
   public isOpenGallery: boolean = false;

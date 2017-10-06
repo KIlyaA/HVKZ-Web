@@ -3,26 +3,18 @@ import styled from 'styled-components';
 import { observable, action, computed } from 'mobx';
 import { observer } from 'mobx-react';
 
-import { PhotoSwipeGallery } from 'react-photoswipe';
-
 import { inject } from '../utils/di';
 import { UsersStore } from '../domain/users-store';
-import { GalleryStore, Photo } from '../domain/gallery-store';
+import { GalleryStore } from '../domain/gallery-store';
 import { FileUploadTask } from '../domain/file-upload-task';
 import { ImageUploader } from '../utils/image-uploader';
 import { CommonStore } from '../domain/common-store';
-import { User } from '../domain/models';
+import { User, Photo } from '../domain/models';
 
 import { Header } from './header';
 import { UploadDialog } from './upload/upload-dialog';
 import { UploadButton } from './upload/upload-button';
-
-const galleryOptions = {
-  history: false,
-  shareEl: false,
-  showHideOpacity: true,
-  getThumbBoundsFn: false
-};
+import { Gallery } from './gallery';
 
 interface Props {
   userId: number;
@@ -85,17 +77,7 @@ class ProfileView extends React.Component<Props> {
       <div className={this.props.className}>
         <Header user={this.user}/>
         <h3 className="gallery-title">Галерея</h3>
-        {this.gallery && <PhotoSwipeGallery
-          items={this.gallery.map(p => ({
-            src: p.url.replace('&amp;', '&'),
-            title: p.description,
-            w: 0,
-            h: 0
-          }))}
-          options={galleryOptions}
-          thumbnailContent={this.getThumbnailContent}
-          gettingData={this.onGettingData}
-        />}
+        {this.gallery && <Gallery items={this.gallery} onAdditionalClick={this.handleDeletePhoto}/>}
         {this.props.userId === this.commonStore.currentUserId && 
           <UploadButton onChange={this.handleUpload}/>}
         {this.uploadTask !== null &&
@@ -104,99 +86,30 @@ class ProfileView extends React.Component<Props> {
     );
   }
 
-  private getThumbnailContent = (photo: { src: string, title: string }) => {
-    return (
-      <div className="thumb">
-        <div className="image" style={{ backgroundImage: `url(${photo.src})` }}/>
-        <img src={photo.src} alt={photo.title} />
-      </div>
-    );
-  }
-
-  private onGettingData = (gallery, index, item) => {
-    if (item.w === 0 || item.h === 0) {
-      console.log(index);
-      let image: HTMLImageElement | null = new Image();
-      image.src = item.src;
-
-      item.w = image.naturalWidth;
-      item.h = image.naturalHeight;
-
-      image.remove();
-      item = null;
-    }
-  }
-
   private handleUpload = async (event: React.FormEvent<HTMLInputElement>) => {
     const file = Array.from(event.currentTarget.files || [])[0];
 
     if (file) {
       this.uploadTask = await this.imageUploader.upload(file);
-      event.currentTarget.value = '';    
+      event.currentTarget.value = '';
     }
   }
 
   private handleUploadDone = () => {
     this.uploadTask = null;
   }
+
+  private handleDeletePhoto = (index: number) => {
+    if (this.user && this.user.uid === this.commonStore.currentUserId) {
+      if (confirm('Удалить фотографию?')) {
+        this.galleryStore.removeFromGallery(this.user.uid, index);
+      }
+    }
+  }
 }
 
 const StyledProfileView = styled(ProfileView)`
   position: relative;
-
-  .pswp-thumbnails {
-    display: flex;
-    flex-flow: row wrap;
-    width: 100%;
-  }
-
-  .pswp-thumbnail {
-    position: relative;
-    width: 33.3333%;
-    box-sizing: border-box;    
-    border-right: 2px solid #fff;
-    border-bottom: 2px solid #fff;
-
-    &:before {
-      display: block;
-      content: "";
-      width: 100%;      
-      padding-top: 100%;
-    }
-
-    &:nth-child(3n) {
-      border-right: none;
-    }
-
-    > .thumb {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-
-      .image {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-
-        background-size: cover;
-        background-position: center;
-      }
-
-      img {
-        visibility: hidden;
-        width: 100%;
-        height: 100%;
-      }
-    }
-  }
 
   .gallery-title {
     padding: 24px 15px 16px 15px;

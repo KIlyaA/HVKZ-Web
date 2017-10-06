@@ -2,8 +2,8 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 import { PhotoSwipe } from 'react-photoswipe';
 
-import { inject } from '../utils/di';
-import { UIStore } from '../domain/ui-store';
+import { inject } from './utils/di';
+import { UIStore } from './domain/ui-store';
 
 @observer
 export class LightBox extends React.Component {
@@ -17,7 +17,7 @@ export class LightBox extends React.Component {
     }
 
     const galleryOptions = {
-      history: false,
+      history: true,
       shareEl: false,
       showHideOpacity: true,
       getThumbBoundsFn: false,
@@ -26,10 +26,11 @@ export class LightBox extends React.Component {
 
     return (
       <PhotoSwipe
-        items={this.uiStore.currentImages.map(url => ({
-          src: url.replace('&amp;', '&'),
+        items={this.uiStore.currentImages.map(photo => ({
+          src: photo.url.replace('&amp;', '&'),
           w: 0,
-          h: 0
+          h: 0,
+          title: photo.description
         }))}
         options={galleryOptions}
         gettingData={this.onGettingData}
@@ -45,7 +46,6 @@ export class LightBox extends React.Component {
 
   private onGettingData = (gallery, index, item) => {
     if (item.w === 0 || item.h === 0) {
-      console.log(index);
       let image: HTMLImageElement | null = new Image();
       image.src = item.src;
 

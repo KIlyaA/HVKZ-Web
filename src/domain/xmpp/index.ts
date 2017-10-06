@@ -2,10 +2,11 @@ import hmacsha1 from 'hmacsha1';
 import { action, observable } from 'mobx';
 import { $iq, $pres, $msg, Strophe } from 'strophe.js';
 
-import { inject, singleton } from '../utils/di';
-import { XMPPReceiver } from '../utils/xmpp-receiver';
-import { APIClient } from '../api';
-import { CHAT_STATE } from './models';
+import { inject, singleton } from '../../utils/di';
+import { ConnectionStatus } from './connection-status';
+import { XMPPReceiver } from './receiver';
+import { APIClient } from '../../api';
+import { CHAT_STATE } from '../models';
 
 @singleton(XMPP)
 export class XMPP {
@@ -18,13 +19,7 @@ export class XMPP {
   public userId: number;
 
   @observable
-  public isConnecting: boolean = false;
-
-  @observable
-  public isConnected: boolean = false;
-
-  @observable
-  public error: string | null = null;
+  public status: ConnectionStatus = ConnectionStatus.UNDEFINED;
 
   private hasAccount = false;
   private connection = new Strophe.Connection('ws://api.hvkz.org/chat/');
@@ -40,8 +35,6 @@ export class XMPP {
   @action
   public async connect(userId: number) {
     this.userId = userId;
-    this.isConnecting = true;
-    this.error = null;
 
     const jid = `${userId}@${XMPP.DOMAIN}/web`;
     const password = btoa(hmacsha1(userId.toString(), 'password')).substr(0, 20);
@@ -60,7 +53,7 @@ export class XMPP {
 
   // tslint:disable-next-line:no-any
   public sendMessage(chatId: string, type: 'chat' | 'groupchat', content: any) {
-    if (!this.isConnected) {
+    if (this.status !== ConnectionStatus.CONNECTED) {
       throw new Error('Connection not establish');
     }
 
@@ -72,7 +65,7 @@ export class XMPP {
   }
 
   public sendStatus(chatId: string, type: 'chat' | 'groupchat', status: CHAT_STATE) {
-    if (!this.isConnected) {
+    if (this.status !== ConnectionStatus.CONNECTED) {
       throw new Error('Connection not establish');
     }
 
@@ -86,7 +79,7 @@ export class XMPP {
   }
 
   public joinToRoom(roomName: string) {
-    if (this.isConnected) {
+    if (this.status === ConnectionStatus.CONNECTED) {
       this.sendEnterPresence(roomName);
     } 
 
@@ -94,7 +87,7 @@ export class XMPP {
   }
 
   public leaveRoom(roomName: string) {
-    if (this.isConnected) {
+    if (this.status !== ConnectionStatus.CONNECTED) {
       const to = `${roomName}@${XMPP.ROOM_NAMESPACE}.${XMPP.DOMAIN}/${this.userId}`;
       const presence = $pres({ to, type: 'unavailable' });
       this.connection.send(presence);
@@ -121,23 +114,19 @@ export class XMPP {
 
       switch (status) {
         case Strophe.Status.CONNECTING: {
-          this.isConnecting = true;
+          this.status = ConnectionStatus.CONNECTING;
           break;
         }
 
         case Strophe.Status.AUTHFAIL:
         case Strophe.Status.CONNFAIL: {
-          this.error = 'Не удалось установить соединение с сервером';
-          this.isConnecting = false;
-
+          this.status = ConnectionStatus.FAILED;
           onFailure('Не удалось установить соединение с сервером');
           break;
         }
 
         case Strophe.Status.CONNECTED: {
-          this.isConnecting = false;
-          this.isConnected = true;
-          this.error = null;
+          this.status = ConnectionStatus.CONNECTED;
 
           this.connection.send($pres().tree());
           this.connection.addTimedHandler(30000, () => {
@@ -153,7 +142,7 @@ export class XMPP {
         }
 
         case Strophe.Status.DISCONNECTED: {
-          this.isConnected = false;
+          this.status = ConnectionStatus.UNDEFINED;
           break;
         }
 

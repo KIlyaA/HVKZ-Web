@@ -143,7 +143,6 @@ export class SessionStore {
     }
 
     try {
-      await this.session.updateProfile({ displayName: user.uid.toString(), photoURL: '' });
       await this.session.updateEmail(email);
 
       this.user = user;

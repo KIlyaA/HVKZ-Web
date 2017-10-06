@@ -35,9 +35,7 @@ class MessagesList extends React.Component<MessagesListProps> {
   public render(): JSX.Element | null {
     if (this.messages.length === 0) {
       return (
-        <div className={this.props.className}>
-          История сообщений пуста
-        </div>
+        <div className={this.props.className}/>
       );
     }
 

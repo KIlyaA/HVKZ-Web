@@ -1,17 +1,18 @@
-import { action, observable } from 'mobx';
+import { action, observable, reaction, IReactionDisposer } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 
+import { inject } from '../utils/di';
 import { Chat } from '../domain/chat';
 import { ChatsStore } from '../domain/chats-store';
-import { inject } from '../utils/di';
+import { ConnectionStatus } from '../connection-status';
+import { UIStore } from '../domain/ui-store';
+
 import { Header } from './header';
 import { Input } from './input';
 import { Layout } from './layout';
 import { MessagesList } from './messages-list';
-import { LightBox } from './lightbox';
-import { ConnectionStatus } from '../connection-status';
 
 interface ChatViewProps extends RouteComponentProps<{
   chatName: string;
@@ -27,6 +28,11 @@ export class ChatView extends React.Component<ChatViewProps> {
   @inject(ChatsStore)
   private chatsStore: ChatsStore;
 
+  @inject(UIStore)
+  private uiStore: UIStore;
+
+  private disposer: IReactionDisposer;
+
   public componentWillMount(): void {
     this.setCurrentChat(this.props.match.params.chatName);
   }
@@ -35,8 +41,11 @@ export class ChatView extends React.Component<ChatViewProps> {
     this.setCurrentChat(nextProps.match.params.chatName);
   }
 
+  @action
   public componentWillUnmount(): void {
     if (this.chat != null) {
+      this.uiStore.isOpenGallery = false;
+      this.uiStore.currentImages = [];
       this.chat.leave();
     }
   }
@@ -48,7 +57,6 @@ export class ChatView extends React.Component<ChatViewProps> {
 
     return (
       <Layout>
-        <LightBox/>
         <Header chat={this.chat}/>
         <ConnectionStatus/>
         <MessagesList chat={this.chat}/>
@@ -68,7 +76,20 @@ export class ChatView extends React.Component<ChatViewProps> {
       return;
     }
 
+    this.uiStore.isOpenGallery = false;
+    this.uiStore.currentImages = [];
+
     chat!.enter();
     this.chat = chat!;
+
+    if (this.disposer) {
+      this.disposer();
+    }
+
+    this.disposer = reaction(() => chat == null, this.exitChat);
+  }
+
+  private exitChat = () => {
+    this.props.history.replace('/chats');
   }
 }

@@ -1,8 +1,8 @@
-import { XMPPReceiver } from '../utils/xmpp-receiver';
+import { XMPPReceiver } from './xmpp/receiver';
 import { action, computed, observable, runInAction } from 'mobx';
 
 import { inject } from '../utils/di';
-import { XMPP } from './xmpp';
+import { XMPP } from './xmpp/index';
 import { HistoryManager } from '../utils/history-manager';
 import { Message, FWD } from './models';
 
@@ -30,7 +30,7 @@ export class Chat {
   public unreads: Array<number> = [];
 
   @observable
-  public writers: Array<number> = [];
+  public isComposing: boolean = false;
 
   @observable 
   public isNewMessages: boolean = false;
@@ -45,6 +45,8 @@ export class Chat {
 
   @inject(HistoryManager)
   private historyManager: HistoryManager;
+
+  private timeoutId: number;
 
   @computed 
   public get lastMessage(): Message | null {
@@ -138,28 +140,26 @@ export class Chat {
   @action
   // tslint:disable-next-line:no-any
   public sendMessage(text: string, images: string[] = [], forwarded: FWD[] = []): void {
-    try {
-      const recipientId = Number(this.id) || 0;
-      const timestamp = Math.floor(Date.now() / 1000);
-      const senderId = Number(this.xmpp.userId);
-  
-      const message: Message = { 
-        body: text,
-        images,
-        forwarded,
-        senderId,
-        recipientId,
-        timestamp
-      };
-  
-      const content = JSON.stringify(message);
-      this.xmpp.sendMessage(this.id, this.type, content);
-      this.lastTimestamp = timestamp;
-  
-      this.messages.push(message);
-      this.unreads.push(message.timestamp);
-      this.historyManager.addMessage(this.id, message);
-    } catch (e) { console.log(e); /* ignored */}
+    const recipientId = Number(this.id) || 0;
+    const timestamp = Math.floor(Date.now() / 1000);
+    const senderId = Number(this.xmpp.userId);
+
+    const message: Message = { 
+      body: text,
+      images,
+      forwarded,
+      senderId,
+      recipientId,
+      timestamp
+    };
+
+    const content = JSON.stringify(message);
+    this.xmpp.sendMessage(this.id, this.type, content);
+    this.lastTimestamp = timestamp;
+
+    this.messages.push(message);
+    this.unreads.push(message.timestamp);
+    this.historyManager.addMessage(this.id, message);
   }
 
   @action 
@@ -181,9 +181,10 @@ export class Chat {
 
       case 'composing': {
         this.unreads = [];
-        this.writers.push(senderId);
+        this.isComposing = true;
+        clearInterval(this.timeoutId);
 
-        setTimeout(action(() => this.removeFromWriters(senderId)), 6000);
+        this.timeoutId = setTimeout(this.removeFromWriters, 6000);
         break;
       }
 
@@ -212,11 +213,8 @@ export class Chat {
     } catch {/* ignored */}
   }
 
+  @action
   private removeFromWriters(senderId: number) {
-    const index = this.writers.indexOf(senderId);
-    // tslint:disable-next-line:no-bitwise
-    if (~index) {
-      this.writers.splice(index, 1);
-    }
+    this.isComposing = false;
   }
 }

@@ -103,7 +103,7 @@ class GroupsListStructure extends React.Component<{ className?: string }> {
 
 export const GroupList = styled(GroupsListStructure)`
   background: #e6b73f;
-  padding: 12px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #f2f2f2;
 
   .dots {

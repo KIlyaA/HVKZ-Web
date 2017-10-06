@@ -1,7 +1,7 @@
 import { Strophe } from 'strophe.js';
 
-import { singleton } from './di';
-import { Chat } from '../domain/chat';
+import { singleton } from '../../utils/di';
+import { Chat } from '../chat';
 
 @singleton(XMPPReceiver)
 export class XMPPReceiver {

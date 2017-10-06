@@ -62,6 +62,12 @@ export interface User {
     girthButtocks: string;
     hipCirc: string;
   };
-}  
+}
+
+export interface Photo {
+  date?: number;
+  description?: string;
+  url: string;
+}
 
 export type CHAT_STATE = 'active' | 'inactive' | 'composing';

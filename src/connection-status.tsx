@@ -4,7 +4,8 @@ import { observer } from 'mobx-react';
 
 import { inject } from './utils/di';
 import { CommonStore } from './domain/common-store';
-import { XMPP } from './domain/xmpp';
+import { XMPP } from './domain/xmpp/index';
+import { ConnectionStatus as XMPPStatus } from './domain/xmpp/connection-status';
 
 @observer
 class ConnectionStatus extends React.Component<{ className?: string }> {
@@ -16,13 +17,13 @@ class ConnectionStatus extends React.Component<{ className?: string }> {
   private commonStore: CommonStore;
 
   public render(): JSX.Element | null {
-    if (this.xmpp.isConnected) {
+    if (this.xmpp.status === XMPPStatus.CONNECTED) {
       return null;
     }
 
     const classes = this.props.className + 
-      (this.xmpp.isConnecting ? ' action' : '') +
-      (this.xmpp.error ? ' error' : '');
+      (this.xmpp.status === XMPPStatus.CONNECTING ? ' action' : '') +
+      (this.xmpp.status === XMPPStatus.FAILED ? ' error' : '');
 
     let content = (
       <span>
@@ -30,12 +31,12 @@ class ConnectionStatus extends React.Component<{ className?: string }> {
       </span>
     );
 
-    if (this.xmpp.isConnecting) {
+    if (this.xmpp.status === XMPPStatus.CONNECTING) {
       content = (<span>Устанавливаем соединение</span>);
-    } else if (this.xmpp.error) {
+    } else if (this.xmpp.status === XMPPStatus.FAILED) {
       content = (
         <span>
-          {this.xmpp.error}. <a onClick={this.connect}>Повторить</a>  
+          Не удалось подключиться к серверу. <a onClick={this.connect}>Повторить</a>  
         </span>
       );
     }
@@ -45,6 +46,7 @@ class ConnectionStatus extends React.Component<{ className?: string }> {
 
   private connect = (event: React.SyntheticEvent<HTMLAnchorElement>) => {
     event.preventDefault();
+    console.log('TRY CONNECT');
     this.xmpp.connect(this.commonStore.currentUserId);
   }
 }

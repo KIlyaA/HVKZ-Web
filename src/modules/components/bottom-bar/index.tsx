@@ -43,6 +43,7 @@ export const BottomBar = styled(BottomBarStructure)`
   align-items: center;
 
   a {
+    -webkit-tap-highlight-color: transparent;
     text-decoration: none;
     font-size: 12px;
     text-align: center;

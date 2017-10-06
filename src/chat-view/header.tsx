@@ -10,6 +10,8 @@ import { declOfNum } from '../utils/decl-of-num';
 import arrow from './arrow-left.svg';
 import { User } from '../domain/models';
 
+import { TypingIndicator } from '../typing-indicator';
+
 const marquee = keyframes`
   0%   { transform: translate(0, 0); }
   100% { transform: translate(-80%, 0); }
@@ -72,6 +74,10 @@ const Info = styled.div`
     color: #555;
     font-size: 12px;
     line-height: 18px;
+
+    > ${TypingIndicator} {
+      display: inline-block;
+    }
   }
 `;
 
@@ -137,8 +143,12 @@ export class Header extends React.Component<HeaderProps> {
     this.router.history.push('/chats');
   }
 
-  private getStatus(): string {
+  private getStatus(): string | JSX.Element {
     const chatName = this.props.chat.id;
+
+    if (this.props.chat.isComposing) {
+      return <TypingIndicator/>;
+    }
 
     if (this.props.chat.type === 'chat') {
       return 'В сети';

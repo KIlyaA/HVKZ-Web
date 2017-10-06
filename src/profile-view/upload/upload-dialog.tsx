@@ -43,14 +43,22 @@ class UploadDialog extends React.Component<Props> {
   @observable
   private hasError: boolean = false;
 
+  @observable
+  private isSend: boolean = false;
+
   @inject(GalleryStore)
   private galleryStore: GalleryStore;
 
   @inject(CommonStore)
   private commonStore: CommonStore;
-  
+
+  public componentWillUnmount(): void {
+    if (!this.isSend) {
+      this.props.task.cancel();
+    }
+  }
+
   public render(): JSX.Element | null {
-    console.log(this.galleryStore);
     const { task, className } = this.props;
 
     return (
@@ -89,6 +97,7 @@ class UploadDialog extends React.Component<Props> {
         const url = this.props.task.downloadUrl;
         const description = this.textInput.value;
 
+        this.isSend = true;
         await this.galleryStore.addToGallery(userId, url, description);
         this.props.onDone();
       } catch (error) {

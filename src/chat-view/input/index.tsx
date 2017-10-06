@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import Textarea from 'react-textarea-autosize';
 
 import { inject } from '../../utils/di';
-import { XMPP } from '../../domain/xmpp';
 import { UIStore } from '../../domain/ui-store';
 import { Chat } from '../../domain/chat';
 import { FWD } from '../../domain/models';
@@ -99,9 +98,6 @@ export class Input extends React.Component<InputProps> {
   @observable.shallow
   private uploads: FileUploadTask[] = [];
 
-  @inject(XMPP)
-  private xmpp: XMPP;
-
   @inject(ImageUploader)
   private imageUploader: ImageUploader;
 
@@ -127,13 +123,13 @@ export class Input extends React.Component<InputProps> {
      <Wrapper>
       {forwaded.size !== 0 && (
         <div className="fwd">В ответ на {forwaded.size} 
-          {declOfNum(forwaded.size, ['сообщение', 'сообщения', 'сообщений'])}</div>
+          {' ' + declOfNum(forwaded.size, ['сообщение', 'сообщения', 'сообщений'])}</div>
       )}
       {this.uploads.length !== 0 && (
         <Images>{this.uploads.map(upload => this.renderUploadView(upload))}</Images>
       )}
-      <Form onSubmit={this.handleSubmit} disabled={!this.xmpp.isConnected}>
-        <UploadButton onChange={this.uploadImages} disabled={!this.xmpp.isConnected}/>
+      <Form onSubmit={this.handleSubmit}>
+        <UploadButton onChange={this.uploadImages}/>
         <MessageInput
           maxRows={3}
           placeholder="Введите сообщение..."
@@ -157,13 +153,7 @@ export class Input extends React.Component<InputProps> {
   }
 
   private handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    if (!this.xmpp.isConnected) {
-      alert('Отправка сообщения невозможна по причине отсутствия подключения');
-      return;
-    }
-    
+    e.preventDefault();    
     this.sendMessage();
   }
 
@@ -226,12 +216,16 @@ export class Input extends React.Component<InputProps> {
         });
       });
 
-      this.props.chat.sendMessage(text, images, forwaded.sort((a, b) => a.timestamp - b.timestamp));
-      this.messageText = '';
-
-      this.uiStore.selectedMessages.clear();
-      this.uploads = [];
-      localStorage.removeItem('upload_tasks');
+      try {
+        this.props.chat
+          .sendMessage(text, images, forwaded.sort((a, b) => a.timestamp - b.timestamp));
+        this.messageText = '';
+        this.uiStore.selectedMessages.clear();
+        this.uploads = [];
+        localStorage.removeItem('upload_tasks');
+      } catch {
+        alert('Сообщение не отправилось');
+      }
     }
   }
 }

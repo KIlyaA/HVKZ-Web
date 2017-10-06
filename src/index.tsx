@@ -4,11 +4,12 @@ import 'react-photoswipe/lib/photoswipe.css';
 import * as Firebase from 'firebase';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { injectGlobal } from 'styled-components';
-import DevTools from 'mobx-react-devtools';
+import { HashRouter as Router } from 'react-router-dom';
 
-import { Application } from './application';
 import { bind } from './utils/di';
+
+import { Auth } from './auth/index';
+import { Application } from './application';
 
 const firebaseApplication = Firebase.initializeApp({
   apiKey: 'AIzaSyAf0GPyWWcbBKTWP6PMUklpAeYlPkH-ZNo',
@@ -25,35 +26,10 @@ bind(Firebase.database, firebaseApplication.database());
 bind(Firebase.messaging, firebaseApplication.messaging());
 bind(Firebase.storage, firebaseApplication.storage());
 
-injectGlobal`
-  html, body {
-    width: 100%;
-    height: 100%;
-  }
-
-  body {
-    margin: 0;
-    
-    font-size: 16px;
-    line-height: 1.5;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-      Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-
-    overflow-y: hidden;
-  }
-
-  #root {
-    box-sizing: border-box;
-    margin: 0 auto;
-    max-width: 480px;
-    width: 100%;
-    height: 100%;
-
-    > div {
-      width: 100%;
-      height: 100%;
-    }
-  }
-`;
-
-ReactDOM.render((<div><DevTools/><Application/></div>), document.getElementById('root'));
+ReactDOM.render((
+  <Router>
+    <Auth>
+     <Application/>
+    </Auth>
+  </Router>
+), document.getElementById('root')); // tslint:disable-line:align

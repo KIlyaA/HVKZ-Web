@@ -27,6 +27,18 @@ class Menu extends React.Component<{ className?: string }> {
   private currentWeekDay: number = (new Date()).getDay();
 
   public render(): JSX.Element {
+    if (!this.commonStore.isActiveUser) {
+      return (
+        <Layout>
+          <div className={this.props.className}>
+            <div>
+              <p>Нет доступа к программе</p>
+            </div>
+          </div>
+      </Layout>
+      );
+    }
+
     return (
       <Layout>
         <div className={this.props.className}>

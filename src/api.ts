@@ -3,7 +3,7 @@ import { Strophe } from 'strophe.js';
 import { singleton } from './utils/di';
 import { User } from './domain/models';
 
-const baseUrl = 'http://api.hvkz.org:9090/plugins/restapi/v1/';
+const baseUrl = '//api.hvkz.org:9090/plugins/restapi/v1/';
 const openfireHeaders = {
   'Accept': 'application/json',
   'Authorization': 'xp2rmBRtww9B2N5h',
@@ -13,18 +13,16 @@ const openfireHeaders = {
 @singleton(APIClient)
 export class APIClient {
 
-  private static HEADERS = {
-    'Origin': 'hvkz.org',
-    'X-Requested-With': 'XMLHttpRequest'
-  };
-
   public async getUser(email: string): Promise<User | null> {
-    const username = email.replace(/@|\./g, '');
+    const username = email.replace(/@|\./g, '').replace('-', '~');
 
     // TODO: Delete proxy request
-    const response = await fetch(
-      `https://cors-anywhere.herokuapp.com/http://hvkz.org/index/8-0-${username}?api`,
-      { headers: APIClient.HEADERS });
+    const response = await fetch(`//hvkz.org/index/8-0-${username}?api`);
+    // const response = 
+    // await fetch(`https://cors-anywhere.herokuapp.com/http://hvkz.org/index/8-0-${username}?api`, { headers: {
+    //   'Origin': 'hvkz.org',
+    //   'X-Requested-With': 'XMLHttpRequest'
+    // }});
     
     const body = await response.text();
 
@@ -73,5 +71,30 @@ export class APIClient {
 
     // created or conflict
     return response.status === 201 || response.status === 409;
+  }
+
+  public async createChatRoom(roomName: string, notice: string): Promise<void> {
+    const body = JSON.stringify({
+      roomName,
+      naturalName: roomName,
+      description: notice,
+      loginRestrictedToNickname: 'true',
+      persistent: 'true',
+      publicRoom: 'true',
+      membersOnly: 'false',
+      logEnabled: 'true', 
+      registrationEnabled: 'true',
+      canAnyoneDiscoverJID: 'true',
+    });
+    
+    const response = await fetch(baseUrl + 'users', { 
+      method: 'POST', 
+      headers: openfireHeaders, 
+      body 
+    });
+
+    if (response.status !== 201) {
+      throw new Error('Не удалось создать чат-комнату');
+    }
   }
 }

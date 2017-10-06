@@ -34,6 +34,18 @@ export class ChatsStore {
   }
 
   @action
+  public removeChat = async (name: string) => {
+    const chat = this.chats.get(name);
+
+    if (!chat) {
+      return;
+    }
+
+    chat.destroy();
+    this.chats.delete(name);
+  }
+
+  @action
   private async createChat(chatId: string, type: 'chat' | 'groupchat') {
     if (this.chats.has(chatId)) {
       throw new Error('Chat already exists');

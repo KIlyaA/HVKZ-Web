@@ -65,6 +65,8 @@ class GroupItemStructure extends React.Component<GroupItemProps> {
 }
 
 export const GroupItem = styled(GroupItemStructure)`
+  margin: 12px;
+  margin-bottom: 0;
   background: #fff;
   border-radius: 5px;
   border: 1px solid #c0c0c0;
