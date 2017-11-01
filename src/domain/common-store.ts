@@ -3,7 +3,7 @@ import * as Firebase from 'firebase';
 import { observable, runInAction, action, computed, reaction } from 'mobx';
 
 import { singleton, inject } from '../utils/di';
-// import { APIClient } from '../api';
+import { APIClient } from '../api';
 import { XMPP } from './xmpp/index';
 import { ChatsStore } from './chats-store';
 import { UsersStore } from './users-store';
@@ -50,8 +50,8 @@ export class CommonStore {
   @inject(Firebase.database)
   private databaseService: Firebase.database.Database;
 
-  // @inject(APIClient)
-  // private apiClient: APIClient;
+  @inject(APIClient)
+  private apiClient: APIClient;
 
   @computed
   public get isActiveUser(): boolean {
@@ -106,7 +106,7 @@ export class CommonStore {
     this.initUserData();
 
     console.log('SETTINGS');
-    this.initSettings();
+    await this.initSettings();
 
     console.log('CHATS');
     await this.initChats();
@@ -133,10 +133,10 @@ export class CommonStore {
     const groupsChats = (await this.groupsStore.init(this.currentUserId))
       .map(this.chatsStore.addGroupChat);
 
-    // const personalChats = (await this.apiClient.getRoster(this.currentUserId.toString()))
-    //   .map(this.chatsStore.addPersonalChat);
+    const personalChats = (await this.apiClient.getRoster(this.currentUserId.toString()))
+      .map(this.chatsStore.addPersonalChat);
 
-    // await Promise.all(personalChats.concat(groupsChats));
+    await Promise.all(personalChats.concat(groupsChats));
 
     await Promise.all(groupsChats);
   }

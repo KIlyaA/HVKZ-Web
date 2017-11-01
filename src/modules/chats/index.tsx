@@ -59,6 +59,7 @@ export class ChatsPage extends React.Component {
             </Link>
           );
         })}
+        {this.commonStore.isAdmin && ('float button')}
       </Layout>
     );
   }

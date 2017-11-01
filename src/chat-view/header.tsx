@@ -28,8 +28,8 @@ const Wrapper = styled.div`
   padding: 0 15px;
 
   background: #fff; 
-  border-bottom: 2px solid #e6b73f; 
-  box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.18); 
+  border-bottom: 2px solid #e6b73f;
+  box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.18);
 `;
 
 const BackArrow = styled.div`

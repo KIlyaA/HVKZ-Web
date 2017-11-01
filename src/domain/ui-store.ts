@@ -20,4 +20,7 @@ export class UIStore {
 
   @observable
   public indexImage: number = 0;
+
+  @observable
+  public isAllUsersLoaded: boolean = false;
 }

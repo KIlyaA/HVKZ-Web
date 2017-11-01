@@ -74,4 +74,20 @@ export class UsersStore {
   public setUser(userId: number, user: User | null) {
     this.users.set(userId, user);
   }
+
+  @action
+  public async loadAll() {
+    const snapshot: Firebase.database.DataSnapshot =
+      await this.database.ref('users').once('value');
+
+    snapshot.forEach(action((userSnapshot:  Firebase.database.DataSnapshot)  => {
+      let user = JSON.parse(userSnapshot.val().data);
+
+      if (user.uid) {
+        this.users.set(user.uid, user);      
+      }
+
+      return false;
+    }));
+  }
 }
